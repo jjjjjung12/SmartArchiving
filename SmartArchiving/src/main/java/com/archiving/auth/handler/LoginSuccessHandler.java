@@ -1,8 +1,6 @@
 package com.archiving.auth.handler;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -36,23 +34,16 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
         if (authentication.getDetails() instanceof LoginResult) {
             LoginResult result = (LoginResult) authentication.getDetails();
             loginService.applySessionAttributes(session, result.getSessionAttributes());
-        }
 
-        String contextPath = request.getContextPath();
-        String redirectUrl = contextPath + "/";
-
-        if (authentication.getDetails() instanceof LoginResult) {
-            LoginResult result = (LoginResult) authentication.getDetails();
             if (result.isExpireWarn()) {
-                redirectUrl = contextPath + "/?"
-                        + "expireWarn=true"
-                        + "&expireDate=" + URLEncoder.encode(
-                                nullToEmpty(result.getExpireDate()), StandardCharsets.UTF_8)
-                        + "&remainDays=" + (result.getRemainDays() == null ? "0" : result.getRemainDays());
+                session.setAttribute("expireWarn", true);
+                session.setAttribute("expireDate", nullToEmpty(result.getExpireDate()));
+                session.setAttribute("remainDays", result.getRemainDays() == null ? 0L : result.getRemainDays());
             }
         }
 
-        response.sendRedirect(redirectUrl);
+        String contextPath = request.getContextPath();
+        response.sendRedirect(contextPath + "/");
     }
 
     private String nullToEmpty(String value) {

@@ -5,14 +5,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.archiving.auth.dto.LoginResult;
 import com.archiving.auth.exception.LoginFailedException;
 import com.archiving.auth.service.LoginService;
-
-import javax.servlet.http.HttpServletRequest;
 
 @Component
 public class ArchivingAuthenticationProvider implements AuthenticationProvider {
@@ -30,8 +26,16 @@ public class ArchivingAuthenticationProvider implements AuthenticationProvider {
                 ? ""
                 : authentication.getCredentials().toString();
 
-        HttpServletRequest request = currentRequest();
-        LoginResult result = loginService.authenticate(username, password, request);
+        String clientIp = "";
+        boolean ssoPresent = false;
+        if (authentication.getDetails() instanceof LoginWebAuthenticationDetails) {
+            LoginWebAuthenticationDetails details =
+                    (LoginWebAuthenticationDetails) authentication.getDetails();
+            clientIp = details.getClientIp();
+            ssoPresent = details.isSsoPresent();
+        }
+
+        LoginResult result = loginService.authenticate(username, password, clientIp, ssoPresent);
 
         if (!result.isSuccess()) {
             throw new LoginFailedException(
@@ -51,13 +55,5 @@ public class ArchivingAuthenticationProvider implements AuthenticationProvider {
     @Override
     public boolean supports(Class<?> authentication) {
         return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
-    }
-
-    private HttpServletRequest currentRequest() {
-        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attrs == null) {
-            throw new LoginFailedException("ERROR", "요청 정보를 확인할 수 없습니다.", null, null);
-        }
-        return attrs.getRequest();
     }
 }

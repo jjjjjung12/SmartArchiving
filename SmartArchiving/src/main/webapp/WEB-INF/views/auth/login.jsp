@@ -25,10 +25,12 @@ if (ssoId == null) {
                 <div class="card-body p-4">
                     <h4 class="text-center mb-4">SmartArchiving</h4>
 
-                    <c:if test="${not empty param.message}">
-                        <div class="alert alert-${param.result == 'success' ? 'success' : 'danger'} py-2">
-                            <c:out value="${param.message}"/>
+                    <c:if test="${not empty sessionScope.loginMessage}">
+                        <div class="alert alert-${sessionScope.loginResultCode == 'success' ? 'success' : 'danger'} py-2">
+                            <c:out value="${sessionScope.loginMessage}"/>
                         </div>
+                        <c:remove var="loginResultCode" scope="session"/>
+                        <c:remove var="loginMessage" scope="session"/>
                     </c:if>
 
                     <form id="form_login" action="${ctx}/login" method="post">
@@ -57,7 +59,13 @@ if (ssoId == null) {
 <script>
     var sessionSsoId = "<%=ssoId%>";
     var ctx = "${ctx}";
+    var expireWarn = "${sessionScope.expireWarn}";
+    var expireDate = "${sessionScope.expireDate}";
+    var remainDays = "${sessionScope.remainDays}";
 </script>
+<c:remove var="expireWarn" scope="session"/>
+<c:remove var="expireDate" scope="session"/>
+<c:remove var="remainDays" scope="session"/>
 <script src="${ctx}/js/auth/login.js"></script>
 </body>
 </html>

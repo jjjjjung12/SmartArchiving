@@ -6,10 +6,11 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.archiving.auth.dao.mapper.LoginMapper;
@@ -17,36 +18,32 @@ import com.archiving.auth.dao.mapper.LoginMapper.InsaLoginRow;
 import com.archiving.auth.dao.mapper.LoginMapper.UserLoginRow;
 import com.archiving.auth.dto.LoginResult;
 import com.archiving.auth.security.LoginUser;
-import com.archiving.auth.security.Sha256PasswordEncoder;
-import com.archiving.util.ClientIpResolver;
 import com.archiving.util.DateUtil;
 import com.archiving.util.StringUtil;
+import com.archiving.util.UtilClass;
 
 /**
- * MAGICARCHIVE LoginService 와 동일한 검증 순서.
  * (인사: 결재+만료 선처리 → 만료 30일 전 → IP → 퇴직 → 지점/90일/세션, 비인사+SSO는 NotInsaMaster)
  */
 @Service
 public class LoginService {
+
+    private static final Logger log = LoggerFactory.getLogger(LoginService.class);
 
     private static final String GROUP_ADMIN_100 = "100";
     private static final String GROUP_ADMIN_101 = "101";
 
     private final LoginMapper loginMapper;
     private final MenuAuthService menuAuthService;
-    private final Sha256PasswordEncoder passwordEncoder = new Sha256PasswordEncoder();
+    private final UtilClass utilClass = new UtilClass();
 
     public LoginService(LoginMapper loginMapper, MenuAuthService menuAuthService) {
         this.loginMapper = loginMapper;
         this.menuAuthService = menuAuthService;
     }
 
-    public LoginResult authenticate(String userCd, String rawPassword, HttpServletRequest request) {
-        HttpSession session = request.getSession(true);
-        session.setMaxInactiveInterval(60 * 30);
-
-        boolean ssoYn = session.getAttribute("sso_id") != null;
-        String ip = ClientIpResolver.resolve(request);
+    public LoginResult authenticate(String userCd, String rawPassword, String clientIp, boolean ssoYn) {
+        String ip = StringUtil.nvlTrim(clientIp);
         String sUsercd = StringUtil.nvlTrim(userCd);
         String sPwd = rawPassword == null ? "" : rawPassword.trim();
 
@@ -115,7 +112,7 @@ public class LoginService {
         if (hasInsa) {
             return authenticateInsaUser(
                     sUsercd, sPwd, insa, user, hasUser, approvalLineUserId,
-                    diffDays, sessionAttrs, expireWarn, expireDate, remainDays);
+                    diffDays, sessionAttrs, expireWarn, expireDate, remainDays, ssoYn);
         }
 
         if (ssoYn) {
@@ -151,6 +148,8 @@ public class LoginService {
                 return failure("apply", "결재건이 존재합니다.", "/userApproveProcNonLogin", sessionAttrs);
             }
         } catch (ParseException e) {
+            log.error("[LOGIN] expireDate parse failed. expireDate={}, today={}",
+                    user == null ? null : user.getExpireDate(), DateUtil.todayYmd(), e);
             return failure("ERROR", "로그인 처리 중 오류가 발생했습니다.", null, sessionAttrs);
         }
         return null;
@@ -167,7 +166,8 @@ public class LoginService {
             Map<String, Object> sessionAttrs,
             boolean expireWarn,
             String expireDate,
-            Long remainDays) {
+            Long remainDays,
+            boolean ssoYn) {
 
         if (StringUtil.isNotBlank(insa.getRtrDt())) {
             return failure("retired", "재직 상태가 아닙니다. 사용이 불가능 합니다.", null, sessionAttrs);
@@ -181,6 +181,13 @@ public class LoginService {
                 return failure("apply", "결재건이 존재합니다.", "/userApproveProcNonLogin", sessionAttrs);
             }
             return failure("authFailed", "권한 신청이 필요합니다.", "/userAuthApplyLogin", sessionAttrs);
+        }
+
+        if (!ssoYn) {
+            LoginResult passwordResult = verifyPassword(sPwd, user, sessionAttrs);
+            if (passwordResult != null) {
+                return passwordResult;
+            }
         }
 
         String groupId = user.getUserGrpId();
@@ -228,9 +235,9 @@ public class LoginService {
             return failure("useFailed", "사용 중지된 계정입니다.", null, sessionAttrs);
         }
 
-        String encodedPwd = passwordEncoder.encode(sPwd);
-        if (!StringUtils.equalsIgnoreCase(encodedPwd, user.getPassword())) {
-            return failure("invalid", "아이디 또는 비밀번호가 올바르지 않습니다.", null, sessionAttrs);
+        LoginResult passwordResult = verifyPassword(sPwd, user, sessionAttrs);
+        if (passwordResult != null) {
+            return passwordResult;
         }
 
         loginMapper.updateLoginDate(sUsercd, DateUtil.todayYmd());
@@ -283,6 +290,14 @@ public class LoginService {
         }
         session.removeAttribute("sso_id");
         menuAuthService.clearAllowedMenuPathsCache(session);
+    }
+
+    private LoginResult verifyPassword(String rawPassword, UserLoginRow user, Map<String, Object> sessionAttrs) {
+        String pwd = utilClass.encryptSHA256(rawPassword);
+        if (!StringUtils.equalsIgnoreCase(pwd, user.getPassword())) {
+            return failure("invalid", "아이디 또는 비밀번호가 올바르지 않습니다.", null, sessionAttrs);
+        }
+        return null;
     }
 
     private LoginResult failure(

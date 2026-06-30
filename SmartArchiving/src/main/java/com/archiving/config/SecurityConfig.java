@@ -12,6 +12,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import com.archiving.auth.handler.AppLogoutSuccessHandler;
 import com.archiving.auth.handler.LoginFailureHandler;
 import com.archiving.auth.handler.LoginSuccessHandler;
+import com.archiving.auth.security.LoginWebAuthenticationDetailsSource;
 
 @Configuration
 @EnableWebSecurity
@@ -21,16 +22,19 @@ public class SecurityConfig {
     private final LoginSuccessHandler loginSuccessHandler;
     private final LoginFailureHandler loginFailureHandler;
     private final AppLogoutSuccessHandler appLogoutSuccessHandler;
+    private final LoginWebAuthenticationDetailsSource loginWebAuthenticationDetailsSource;
 
     public SecurityConfig(
             AuthenticationProvider authenticationProvider,
             LoginSuccessHandler loginSuccessHandler,
             LoginFailureHandler loginFailureHandler,
-            AppLogoutSuccessHandler appLogoutSuccessHandler) {
+            AppLogoutSuccessHandler appLogoutSuccessHandler,
+            LoginWebAuthenticationDetailsSource loginWebAuthenticationDetailsSource) {
         this.authenticationProvider = authenticationProvider;
         this.loginSuccessHandler = loginSuccessHandler;
         this.loginFailureHandler = loginFailureHandler;
         this.appLogoutSuccessHandler = appLogoutSuccessHandler;
+        this.loginWebAuthenticationDetailsSource = loginWebAuthenticationDetailsSource;
     }
 
     @Bean
@@ -54,6 +58,7 @@ public class SecurityConfig {
             .formLogin(form -> form
                 .loginPage("/login")
                 .loginProcessingUrl("/login")
+                .authenticationDetailsSource(loginWebAuthenticationDetailsSource)
                 .successHandler(loginSuccessHandler)
                 .failureHandler(loginFailureHandler)
                 .permitAll()

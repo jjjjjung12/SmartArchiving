@@ -6,19 +6,19 @@
 <%@ page import="java.util.List"%>
 <%@page import="com.initech.eam.nls.TicketV3"%>
 
-<%@ include file="/js/lib/cutCarriageReturn.jsp" %>
+<%@ include file="../include/cutCarriageReturn.jsp" %>
 <%
 	List res = null;
 	String userid = null;
 	String toa = null;
 	String strNLS = null;
-	String ASCP_URL = ""; // ????????? URL
-	//String Login_URL = "https://ssodev.nonghyup.com:15502/"; (????)
-	//String Login_URL = "https://sso.nonghyup.com:15502/";      (??)
+	String ASCP_URL = ""; // ¾÷¹«½Ã½ºÅÛ URL
+	//String Login_URL = "https://ssodev.nonghyup.com:15502/"; (°³¹ß)
+	//String Login_URL = "https://sso.nonghyup.com:15502/";      (¿î¿µ)
 	
 	try {
 		String ticket = (String) request.getParameter("ticket");
-		strNLS = (String) request.getParameter("nlsurl");  //???
+		strNLS = (String) request.getParameter("nlsurl");  //Ãß°¡
 		String savedNonce = (String) session.getAttribute("nexess.nls.resession.nonce");
 		
 		//20230829 428206, 428207, 428212, 428216, 428217 NULL_RETURN_STD (Java/JSP)
@@ -52,13 +52,13 @@
 			decNonce = cutCarriageReturn(TicketV3.decryptNonce(encSKIPAndTime, encNonce));
 		} catch (Exception e) {
 			System.out.println("NCLoginEncVerifyTicket decNonce cutCarriageReturn Exception");
-			//??????? ????? ???? ????ï¿½ï¿½? ????
+			//Æ÷Æ¼ÆÄÀÌ °á°ú·Î ÀÎÇÑ ¾Æ·¡ºÎºÐ »èÁ¦
 			/* if(strNLS != null && !"".equals(strNLS)){
 				strNLS = strNLS.replaceAll("[\\r\\n]", "");
 				if(strNLS == Login_URL){
-					response.sendRedirect(strNLS); //???ï¿½Ù¥ï¿½? ???
+					response.sendRedirect(strNLS); //½ºÆÐ·Î¿ì Á¶Ä¡
 				} else {
-					System.out.println("?ï¿½ï¿½??? URL ????.");
+					System.out.println("·Î±×ÀÎ URL ¿¡·¯.");
 				}
 			} */
 		}
@@ -72,29 +72,29 @@
 			
 			session.setAttribute("sso_id", userid);
 			session.setAttribute("toa", toa);
-			response.sendRedirect(request.getContextPath() + "/");
+			response.sendRedirect("/MagicArchive/index.jsp");
 			
 		}else{
 			System.out.println("NCLoginEncVerifyTicket decNonce, savedNoce not equals");
-			//??????? ????? ???? ????ï¿½ï¿½? ????
+			//Æ÷Æ¼ÆÄÀÌ °á°ú·Î ÀÎÇÑ ¾Æ·¡ºÎºÐ »èÁ¦
 			/* if(strNLS != null && !"".equals(strNLS)){
 				strNLS = strNLS.replaceAll("[\\r\\n]", "");
 				if(strNLS == Login_URL){
-					response.sendRedirect(strNLS); //????? ???
+					response.sendRedirect(strNLS); //Ãë¾àÁ¡ Á¶Ä¡
 				} else {
-					System.out.println("?ï¿½ï¿½??? URL ????.");
+					System.out.println("·Î±×ÀÎ URL ¿¡·¯.");
 				}
 			} */
 		}
 	} catch (Exception e) {
-		System.out.println("?????? ????! ????ï¿½ï¿½??? ???!");
-		//??????? ????? ???? ????ï¿½ï¿½? ????
+		System.out.println("Æ¼ÄÏ°ËÁõ ½ÇÆÐ! ÅëÇÕ·Î±×ÀÎ ÇÊ¿ä!");
+		//Æ÷Æ¼ÆÄÀÌ °á°ú·Î ÀÎÇÑ ¾Æ·¡ºÎºÐ »èÁ¦
 		/* if(strNLS != null && !"".equals(strNLS)){
 			strNLS = strNLS.replaceAll("[\\r\\n]", "");
 			if(strNLS == Login_URL){
-				response.sendRedirect(strNLS); //????? ???
+				response.sendRedirect(strNLS); //Ãë¾àÁ¡ Á¶Ä¡
 			} else {
-				System.out.println("?ï¿½ï¿½??? URL ????.");
+				System.out.println("·Î±×ÀÎ URL ¿¡·¯.");
 			}
 		} */
 	}

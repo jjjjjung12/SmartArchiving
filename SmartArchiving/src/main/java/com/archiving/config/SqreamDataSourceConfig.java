@@ -13,7 +13,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import com.archiving.util.CryptoUtil;
+import com.archiving.util.UtilClass;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -97,7 +97,7 @@ public class SqreamDataSourceConfig {
             return "";
         }
         try {
-            return new CryptoUtil().decrypt(value.trim());
+            return new UtilClass().decrypt(value.trim());
         } catch (Exception ignored) {
             return value;
         }

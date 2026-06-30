@@ -23,7 +23,7 @@
 	</Appenders>
 
 	<Loggers>
-		<Logger name="com.smartarchiving" level="DEBUG" additivity="false">
+		<Logger name="com.archiving" level="DEBUG" additivity="false">
 			<AppenderRef ref="console"/>
 			<AppenderRef ref="file"/>
 		</Logger>

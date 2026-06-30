@@ -30,7 +30,11 @@ public class AppLogoutSuccessHandler implements LogoutSuccessHandler {
         HttpSession session = request.getSession(false);
         loginService.clearLoginSession(session);
 
+        HttpSession noticeSession = request.getSession(true);
+        noticeSession.setAttribute("loginResultCode", "success");
+        noticeSession.setAttribute("loginMessage", "로그아웃되었습니다.");
+
         String contextPath = request.getContextPath();
-        response.sendRedirect(contextPath + "/login?result=success&message=로그아웃되었습니다.");
+        response.sendRedirect(contextPath + "/login");
     }
 }

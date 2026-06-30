@@ -17,7 +17,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
-import com.archiving.util.CryptoUtil;
+import com.archiving.util.UtilClass;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -97,7 +97,7 @@ public class AppPostgresDataSourceConfig {
             return "";
         }
         try {
-            return new CryptoUtil().decrypt(value.trim());
+            return new UtilClass().decrypt(value.trim());
         } catch (Exception ignored) {
             return value;
         }

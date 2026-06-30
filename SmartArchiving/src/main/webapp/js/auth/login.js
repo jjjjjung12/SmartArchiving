@@ -37,9 +37,8 @@
         }
     }
 
-    function handleExpireWarnFromQuery() {
-        var params = new URLSearchParams(window.location.search);
-        if (params.get("expireWarn") !== "true") {
+    function handleExpireWarnFromSession() {
+        if (expireWarn !== "true") {
             return;
         }
         var userCd = sessionSsoId || "";
@@ -47,8 +46,8 @@
             return;
         }
         showExpireWarnPopup(
-            params.get("expireDate") || "",
-            params.get("remainDays") || "0",
+            expireDate || "",
+            remainDays || "0",
             userCd,
             function () {}
         );
@@ -65,6 +64,6 @@
             $("#form_login").trigger("submit");
         }
 
-        handleExpireWarnFromQuery();
+        handleExpireWarnFromSession();
     });
 })(jQuery);
