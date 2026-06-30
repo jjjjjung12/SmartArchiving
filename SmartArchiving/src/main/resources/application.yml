@@ -1,0 +1,253 @@
+spring:
+  profiles:
+    active: "local"
+  output:
+    ansi:
+      enabled: NEVER
+
+---
+#공통
+spring:
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  main:
+    allow-bean-definition-overriding: true
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Seoul
+    serialization:
+      write-dates-as-timestamps: false
+  quartz:
+    job-store-type: memory
+    properties:
+      org.quartz.scheduler.instanceName: MyQuartzScheduler
+      org.quartz.scheduler.skipUpdateCheck: true
+      org.quartz.scheduler.jobFactory.class: org.quartz.simpl.SimpleJobFactory
+      org.quartz.threadPool.class: org.quartz.simpl.SimpleThreadPool
+      org.quartz.threadPool.threadCount: 3
+      org.quartz.jobStore.class: org.quartz.simpl.RAMJobStore
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+    view:
+      prefix: /WEB-INF/views/
+      suffix: .jsp
+    mvc:
+      view:
+        cache: false
+    web:
+      resources:
+        cache:
+          period: 0
+        chain:
+          cache: false
+
+  # Jersey must not use the default "/*" mapping (it would starve Spring MVC / JSP).
+  jersey:
+    application-path: /api
+
+server:
+  servlet:
+    context-path: /SmartArchiving
+    session:
+      cookie:
+        http-only: true
+        secure: false
+        same-site: strict
+      timeout: 30m
+    jsp:
+      init-parameters:
+        development: true
+        javaEncoding: UTF-8
+        pageEncoding: UTF-8
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+      force-request: true
+      force-response: true
+
+app:
+  server:
+    crypted-server: MF.SEED
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: local
+  devtools:
+    restart:
+      enabled: true
+
+server:
+  port: 8084
+
+app:
+  db:
+    sqream:
+      use-postgresql-driver: true # 로컬: Sqream 매퍼(mappers/sqream)를 PostgreSQL 사용
+      host: 172.30.1.151
+      port: 5432
+      db-name: postgres
+      username: postgres
+      password: gD75Qgq3zB11g5DLp6RYWg==
+      max-pool-size: 5
+      min-idle: 1
+      connection-timeout: 5000
+    postgresql:
+      host: 172.30.1.151
+      port: 5432
+      db-name: postgres
+      username: postgres
+      password: gD75Qgq3zB11g5DLp6RYWg==
+      max-pool-size: 5
+      min-idle: 1
+      connection-timeout: 5000
+  upload:
+    dir: C:\nh_upload\SmartArchiving\userImages
+    dir2: C:\nh_upload\SmartArchiving\userImages
+    dir-excel: C:\nh_upload\SmartArchiving\uploadExcel
+    dir-notice: C:\nh_upload\SmartArchiving\notice
+
+mybatis:
+  mapper-locations: classpath:mappers/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+logging:
+  config: classpath:log4j2-local.xml
+  level:
+    root: ERROR
+    com.archiving: DEBUG
+    org.springframework: ERROR
+    org.springframework.boot: ERROR
+    org.springframework.web: ERROR
+    org.apache.catalina: ERROR
+    org.apache.tomcat: ERROR
+
+    # keep SQL / query visibility
+    org.mybatis: DEBUG
+    org.apache.ibatis: DEBUG
+    org.springframework.jdbc.core: DEBUG
+    java.sql: DEBUG
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: dev
+  devtools:
+    restart:
+      enabled: false
+
+server:
+  port: 8084
+
+app:
+  db:
+    sqream:
+      use-postgresql-driver: true # 로컬: Sqream 매퍼(mappers/sqream)를 PostgreSQL 사용
+      host: 172.30.1.151
+      port: 5432
+      db-name: postgres
+      username: postgres
+      password: gD75Qgq3zB11g5DLp6RYWg==
+      max-pool-size: 5
+      min-idle: 1
+      connection-timeout: 5000
+    postgresql:
+      host: 172.30.1.151
+      port: 5432
+      db-name: postgres
+      username: postgres
+      password: gD75Qgq3zB11g5DLp6RYWg==
+      max-pool-size: 5
+      min-idle: 1
+      connection-timeout: 5000
+  upload:
+    dir: /nh/pgm/efblap/sol/dbtoe/SmartArchiving/Web/webapps/upload/userImages
+    dir2: /nh/pgm/efblap/sol/dbtoe/SmartArchiving/Web/webapps/upload/userImages
+    dir-excel: /nh/pgm/efblap/sol/dbtoe/SmartArchiving/Web/webapps/upload/uploadExcel
+    dir-notice: /nh/pgm/efblap/sol/dbtoe/SmartArchiving/Web/webapps/upload/notice
+
+mybatis:
+  mapper-locations: classpath:mappers/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+logging:
+  config: classpath:log4j2-dev.xml
+  level:
+    root: INFO
+    com.archiving: INFO
+    org.springframework: ERROR
+    org.springframework.boot: ERROR
+    org.springframework.web: ERROR
+    org.apache.catalina: ERROR
+    org.apache.tomcat: ERROR
+    
+    # keep SQL / query visibility
+    org.mybatis: DEBUG
+    org.apache.ibatis: DEBUG
+    org.springframework.jdbc.core: DEBUG
+    java.sql: DEBUG
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: prod
+  devtools:
+    restart:
+      enabled: false
+
+server:
+  port: 80
+  servlet:
+    session:
+      cookie:
+        secure: true
+
+app:
+  db:
+    sqream:
+      host: 16.120.0.44
+      port: 3108
+      db-name: nbefblt
+      username: sqream
+      password: gD75Qgq3zB11g5DLp6RYWfg==
+      max-pool-size: 10
+      min-idle: 3
+      connection-timeout: 5000
+    postgresql:
+      host: 16.120.0.44
+      port: 5432
+      db-name: postgres
+      username: postgres
+      password: QFaQYc+lsU2kE8OXmuh6tw==
+      max-pool-size: 10
+      min-idle: 3
+      connection-timeout: 5000
+  upload:
+    dir: /nh/pgm/efblap/sol/dbtoe/SmartArchiving/Web/webapps/upload/userImages
+    dir2: /nh/pgm/efblap/sol/dbtoe/SmartArchiving/Web/webapps/upload/userImages
+    dir-excel: /nh/pgm/efblap/sol/dbtoe/SmartArchiving/Web/webapps/upload/uploadExcel
+    dir-notice: /nh/pgm/efblap/sol/dbtoe/SmartArchiving/Web/webapps/upload/notice
+
+mybatis:
+  mapper-locations: classpath:mappers/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+logging:
+  config: classpath:log4j2-prod.xml
+  level:
+    root: WARN
+    com.archiving: INFO
+    org.quartz: WARN
