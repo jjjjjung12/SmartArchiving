@@ -1,18 +1,164 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE tiles-definitions PUBLIC
-       "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
-       "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
- 
+	"-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+	"http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+
 <tiles-definitions>
 
-	<definition name="layouts-tiles" template="/WEB-INF/tiles/layout/layout-basic.jsp">
-	  	<put-attribute name="tiles_head" value="/WEB-INF/tiles/layout/head.jsp" />
-		<put-attribute name="tiles_header"	value="/WEB-INF/tiles/layout/header.jsp" />
-	  	<put-attribute name="tiles_footer"	value="/WEB-INF/tiles/layout/footer.jsp" />
+	<!-- 유일한 레이아웃 템플릿 — 조합은 extends + put-attribute 로 제어 (sangju 방식) -->
+	<definition name="layouts-base" template="/WEB-INF/tiles/layout/layout-basic.jsp">
+		<put-attribute name="layoutMode" value="main"/>
+		<put-attribute name="tiles_head" value="/WEB-INF/tiles/layout/head.jsp"/>
+		<put-attribute name="tiles_header" value="/WEB-INF/tiles/layout/header.jsp"/>
+		<put-attribute name="tiles_menu" value="/WEB-INF/views/common/includes/sideMenu.jsp"/>
+		<put-attribute name="tiles_footer" value="/WEB-INF/tiles/layout/footer.jsp"/>
 	</definition>
-	
-	<definition name="*/*.tiles" extends="layouts-tiles">
-	    <put-attribute name="tiles_content" value="/WEB-INF/views/{1}/{2}.jsp"/>
+
+	<!-- footer 없음 -->
+	<definition name="layouts-no-footer" extends="layouts-base">
+		<put-attribute name="tiles_footer" value=""/>
+	</definition>
+
+	<!-- header/menu/footer 없음 (팝업, 권한신청 등) -->
+	<definition name="layouts-minimal" extends="layouts-base">
+		<put-attribute name="layoutMode" value="minimal"/>
+		<put-attribute name="tiles_head" value="/WEB-INF/tiles/layout/head-min.jsp"/>
+		<put-attribute name="tiles_header" value=""/>
+		<put-attribute name="tiles_menu" value=""/>
+		<put-attribute name="tiles_footer" value=""/>
+	</definition>
+
+	<!-- 로그인 -->
+	<definition name="layouts-login" extends="layouts-base">
+		<put-attribute name="layoutMode" value="login"/>
+		<put-attribute name="tiles_head" value="/WEB-INF/tiles/layout/head-min.jsp"/>
+		<put-attribute name="tiles_header" value=""/>
+		<put-attribute name="tiles_menu" value=""/>
+		<put-attribute name="tiles_footer" value=""/>
+	</definition>
+
+	<!-- ===== 로그인 ===== -->
+	<definition name="auth/login.tiles" extends="layouts-login">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/auth/login.jsp"/>
+	</definition>
+	<definition name="auth/userAuthApplyLogin.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/auth/userAuthApplyLogin.jsp"/>
+	</definition>
+	<definition name="approve/userApproveProcNonLogin.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/approve/userApproveProcNonLogin.jsp"/>
+	</definition>
+	<definition name="auth/forgot-password.tiles" extends="layouts-login">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/auth/forgot-password.jsp"/>
+	</definition>
+
+	<!-- ===== footer 없는 화면 ===== -->
+	<definition name="magicview/transactionIlog.tiles" extends="layouts-no-footer">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/magicview/transactionIlog.jsp"/>
+	</definition>
+	<definition name="magicview/transactionIlogAsis.tiles" extends="layouts-no-footer">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/magicview/transactionIlogAsis.jsp"/>
+	</definition>
+	<definition name="magicview/transactionIlogIpBand.tiles" extends="layouts-no-footer">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/magicview/transactionIlogIpBand.jsp"/>
+	</definition>
+	<definition name="magicview/statlog.tiles" extends="layouts-no-footer">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/magicview/statlog.jsp"/>
+	</definition>
+	<definition name="magicview/statLogAsis.tiles" extends="layouts-no-footer">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/magicview/statLogAsis.jsp"/>
+	</definition>
+	<definition name="comm/noticeManage.tiles" extends="layouts-no-footer">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/comm/noticeManage.jsp"/>
+	</definition>
+	<definition name="approve/userApproveProc.tiles" extends="layouts-no-footer">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/approve/userApproveProc.jsp"/>
+	</definition>
+	<definition name="approve/userApproveProcAdmin.tiles" extends="layouts-no-footer">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/approve/userApproveProcAdmin.jsp"/>
+	</definition>
+	<definition name="approve/userApproveStatSearch.tiles" extends="layouts-no-footer">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/approve/userApproveStatSearch.jsp"/>
+	</definition>
+
+	<!-- ===== 팝업 ===== -->
+	<definition name="approve/userAuthApplyPop.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/approve/userAuthApplyPop.jsp"/>
+	</definition>
+	<definition name="approve/userAuthApplyDetailPop.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/approve/userAuthApplyDetailPop.jsp"/>
+	</definition>
+	<definition name="bulkjob/bulkReqListPop.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/bulkjob/bulkReqListPop.jsp"/>
+	</definition>
+	<definition name="bulkjob/bulkReqListPop_ykh.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/bulkjob/bulkReqListPop_ykh.jsp"/>
+	</definition>
+	<definition name="comm/downloadReqPop.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/comm/downloadReqPop.jsp"/>
+	</definition>
+	<definition name="comm/noticeManagePop.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/comm/noticeManagePop.jsp"/>
+	</definition>
+	<definition name="comm/noticeManageSetPop.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/comm/noticeManageSetPop.jsp"/>
+	</definition>
+	<definition name="comm/noticeManageDetailPop.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/comm/noticeManageDetailPop.jsp"/>
+	</definition>
+	<definition name="comm/transactionMaskPop.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/comm/transactionMaskPop.jsp"/>
+	</definition>
+	<definition name="comm/tableInfoPop.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/comm/tableInfoPop.jsp"/>
+	</definition>
+	<definition name="comm/tableAttrPop.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/comm/tableAttrPop.jsp"/>
+	</definition>
+	<definition name="comm/down_excel.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/comm/down_excel.jsp"/>
+	</definition>
+	<definition name="asset/updateServiceInfoPop.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/asset/updateServiceInfoPop.jsp"/>
+	</definition>
+	<definition name="asset/serverInfoPop.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/asset/serverInfoPop.jsp"/>
+	</definition>
+	<definition name="asset/daemonInfoPop.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/asset/daemonInfoPop.jsp"/>
+	</definition>
+	<definition name="user/modalDept.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/user/modalDept.jsp"/>
+	</definition>
+	<definition name="user/modalSabun.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/user/modalSabun.jsp"/>
+	</definition>
+	<definition name="magicview/jsonDetail.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/magicview/jsonDetail.jsp"/>
+	</definition>
+	<definition name="magicview/jsonDetailAsis.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/magicview/jsonDetailAsis.jsp"/>
+	</definition>
+	<definition name="magicview/jsonDetailYkh.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/magicview/jsonDetailYkh.jsp"/>
+	</definition>
+	<definition name="job/helpSchedule.tiles" extends="layouts-minimal">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/job/helpSchedule.jsp"/>
+	</definition>
+
+	<!-- ===== 독립 HTML (레이아웃 없이 JSP 자체가 template) ===== -->
+	<definition name="comm/fileRead.tiles" template="/WEB-INF/views/comm/fileRead.jsp"/>
+	<definition name="comm/fileReadSelect.tiles" template="/WEB-INF/views/comm/fileReadSelect.jsp"/>
+	<!-- MCI DB 진단 페이지 (자체 출력, 레이아웃 없음) -->
+	<definition name="asset/MCIDBConn.tiles" template="/WEB-INF/views/asset/MCIDBConn.jsp"/>
+	<definition name="asset/MCIDBport.tiles" template="/WEB-INF/views/asset/MCIDBport.jsp"/>
+	<definition name="asset/MCIDBport2.tiles" template="/WEB-INF/views/asset/MCIDBport2.jsp"/>
+
+	<!-- ===== 기본 (와일드카드) ===== -->
+	<definition name="*/*.tiles" extends="layouts-base">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/{1}/{2}.jsp"/>
+	</definition>
+	<definition name="*/*/*.tiles" extends="layouts-base">
+		<put-attribute name="tiles_content" value="/WEB-INF/views/{1}/{2}/{3}.jsp"/>
 	</definition>
 
 </tiles-definitions>

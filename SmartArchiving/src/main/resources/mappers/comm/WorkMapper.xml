@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.comm.dao.mapper.WorkMapper">
+
+	<!-- /* 업무 목록 조회(서버/업무코드/사용여부 조건) */ -->
+	<select id="selectWorkList" resultType="com.archiving.comm.dto.WorkRowDto">
+		SELECT
+			W.SERVER_ID AS serverId,
+			S.SERVER_NM AS serverNm,
+			W.WORK_CD   AS workCd,
+			W.WORK_NM   AS workNm,
+			W.ACCOUNT_CD AS accountCd,
+			W.DESCRIPTION AS description,
+			W.USE_YN AS useYn
+		FROM mhdb.TB_WORK W
+		JOIN mhdb.TB_SERVER S ON W.SERVER_ID = S.SERVER_ID
+		WHERE 1=1
+		<if test='serverId != null and serverId != "" and serverId != "*"'>
+			AND W.SERVER_ID = #{serverId}::integer
+		</if>
+		<if test='workCd != null and workCd != "" and workCd != "*"'>
+			AND W.WORK_CD = #{workCd}
+		</if>
+		<if test='useYn != null and useYn != "" and useYn != "A"'>
+			AND W.USE_YN like concat('%', #{useYn}, '%')
+		</if>
+		ORDER BY W.WORK_NM
+	</select>
+
+	<!-- /* 업무 신규 등록 */ -->
+	<insert id="insertWork" parameterType="com.archiving.comm.dto.WorkSaveParamDto">
+		INSERT INTO mhdb.TB_WORK (SERVER_ID, WORK_CD, WORK_NM, ACCOUNT_CD, DESCRIPTION, USE_YN)
+		VALUES (#{server_id}, #{work_cd}, #{work_nm}, #{account_cd}, #{description}, #{use_yn})
+	</insert>
+
+	<!-- /* 업무 정보 수정 */ -->
+	<update id="updateWork" parameterType="com.archiving.comm.dto.WorkSaveParamDto">
+		UPDATE mhdb.TB_WORK
+		SET
+			WORK_NM = #{work_nm},
+			ACCOUNT_CD = #{account_cd},
+			DESCRIPTION = #{description},
+			USE_YN = #{use_yn}
+		WHERE SERVER_ID = #{server_id}::integer
+		  AND WORK_CD = #{work_cd}
+	</update>
+
+	<!-- /* 업무 삭제(사용여부 'D' 처리) */ -->
+	<update id="deleteWork">
+		UPDATE mhdb.TB_WORK
+		SET USE_YN = 'D'
+		WHERE SERVER_ID = #{serverId}::integer
+		  AND WORK_CD = #{workCd}
+	</update>
+
+</mapper>
+

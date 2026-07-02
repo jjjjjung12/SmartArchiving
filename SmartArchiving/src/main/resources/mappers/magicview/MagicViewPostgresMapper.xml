@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.magicview.dao.mapper.MagicViewPostgresMapper">
+
+	<!-- /* 당일 마스킹 처리 이력 건수 조회 */ -->
+	<select id="countMaskHistoryToday" resultType="int">
+		SELECT COUNT(1)
+		FROM mhdb.TB_MASK_HISTORY
+		WHERE USER_CD = #{userCd}
+		  AND PROC_DATE = #{procDate}::date
+	</select>
+
+</mapper>

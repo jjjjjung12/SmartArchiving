@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.comm.dao.mapper.CodeMapper">
+
+	<!-- /* 코드상세 목록 조회(그룹/상세코드 조건) */ -->
+	<select id="selectCodeDetails" resultType="com.archiving.comm.dto.CodeDetailDto">
+		SELECT
+			GROUP_CD  AS groupCd,
+			DETAIL_CD AS detailCd,
+			DETAIL_NM AS detailNm,
+			USE_YN    AS useYn
+		FROM mhdb.TB_CODE_DETAIL
+		WHERE GROUP_CD = #{groupCd}
+		<if test='detailCd != null and detailCd != "" and detailCd != "*"'>
+			AND DETAIL_CD = #{detailCd}
+		</if>
+		ORDER BY DETAIL_CD
+	</select>
+
+	<!-- /* 코드그룹 목록 조회 */ -->
+	<select id="selectCodeGroups" resultType="com.archiving.comm.dto.CodeGroupDto">
+		SELECT
+			GROUP_CD AS groupCd,
+			GROUP_NM AS groupNm,
+			USE_YN   AS useYn
+		FROM mhdb.TB_CODE_GROUP
+		WHERE 1=1
+		<if test='groupNm != null and groupNm != "" and groupNm != "*"'>
+			AND (
+				UPPER(GROUP_CD) LIKE '%' || UPPER(#{groupNm}) || '%'
+				OR UPPER(GROUP_NM) LIKE '%' || UPPER(#{groupNm}) || '%'
+			)
+		</if>
+		<if test='useYn != null and useYn != "" and useYn != "A"'>
+			AND USE_YN LIKE concat('%', #{useYn}, '%')
+		</if>
+		ORDER BY GROUP_CD
+	</select>
+
+	<!-- /* 그룹코드 기준 코드상세 목록 조회 */ -->
+	<select id="selectCodeDetailsByGroup" resultType="com.archiving.comm.dto.CodeDetailDto">
+		SELECT
+			GROUP_CD  AS groupCd,
+			DETAIL_CD AS detailCd,
+			DETAIL_NM AS detailNm,
+			USE_YN    AS useYn
+		FROM mhdb.TB_CODE_DETAIL
+		WHERE GROUP_CD = #{groupCd}
+		<if test='useYn != null and useYn != "" and useYn != "A"'>
+			AND USE_YN LIKE concat('%', #{useYn}, '%')
+		</if>
+		ORDER BY DETAIL_CD
+	</select>
+
+	<!-- /* 코드그룹 신규 등록 */ -->
+	<insert id="insertCodeGroup">
+		INSERT INTO mhdb.TB_CODE_GROUP (GROUP_CD, GROUP_NM, USE_YN)
+		VALUES (upper(#{groupCd}), #{groupNm}, #{useYn})
+	</insert>
+
+	<!-- /* 코드그룹 수정 */ -->
+	<update id="updateCodeGroup">
+		UPDATE mhdb.TB_CODE_GROUP
+		SET GROUP_NM = #{groupNm},
+			USE_YN = #{useYn}
+		WHERE GROUP_CD = #{groupCd}
+	</update>
+
+	<!-- /* 코드그룹 삭제 */ -->
+	<delete id="deleteCodeGroup">
+		DELETE FROM mhdb.TB_CODE_GROUP
+		WHERE GROUP_CD = #{groupCd}
+	</delete>
+
+	<!-- /* 그룹코드 기준 코드상세 전체 삭제 */ -->
+	<delete id="deleteCodeDetailsByGroup">
+		DELETE FROM mhdb.TB_CODE_DETAIL
+		WHERE GROUP_CD = #{groupCd}
+	</delete>
+
+	<!-- /* 코드상세 신규 등록 */ -->
+	<insert id="insertCodeDetail">
+		INSERT INTO mhdb.TB_CODE_DETAIL (GROUP_CD, DETAIL_CD, DETAIL_NM, USE_YN)
+		VALUES (upper(#{groupCd}), #{detailCd}, #{detailNm}, #{useYn})
+	</insert>
+
+	<!-- /* 코드상세 수정 */ -->
+	<update id="updateCodeDetail">
+		UPDATE mhdb.TB_CODE_DETAIL
+		SET DETAIL_NM = #{detailNm},
+			USE_YN = #{useYn}
+		WHERE GROUP_CD = #{groupCd}
+		  AND DETAIL_CD = #{detailCd}
+	</update>
+
+	<!-- /* 코드상세 삭제 */ -->
+	<delete id="deleteCodeDetail">
+		DELETE FROM mhdb.TB_CODE_DETAIL
+		WHERE GROUP_CD = #{groupCd}
+		  AND DETAIL_CD = #{detailCd}
+	</delete>
+
+	<!-- /* 전체 코드상세 정렬 조회(그룹/상세코드 순) */ -->
+	<select id="selectAllCodeDetailsOrdered" resultType="com.archiving.comm.dto.CodeDetailDto">
+		SELECT
+			GROUP_CD  AS groupCd,
+			DETAIL_CD AS detailCd,
+			DETAIL_NM AS detailNm,
+			USE_YN    AS useYn
+		FROM mhdb.TB_CODE_DETAIL
+		ORDER BY GROUP_CD, DETAIL_CD
+	</select>
+
+	<!-- /* 캐시용 활성 서버 목록 조회 */ -->
+	<select id="selectActiveServersForCache" resultType="com.archiving.comm.dto.ServerCacheRowDto">
+		SELECT
+			S.SERVER_ID AS serverId,
+			S.SERVER_NM AS serverNm
+		FROM mhdb.TB_SERVER S
+		WHERE S.USE_YN = 'Y'
+		ORDER BY S.SERVER_NM
+	</select>
+
+</mapper>
+

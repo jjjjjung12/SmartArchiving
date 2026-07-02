@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.comm.dao.mapper.TableMapper">
+
+	<!-- /* 테이블 정보 목록 조회(서버/사용여부/테이블ID/테이블명 조건) */ -->
+	<select id="selectTableInfoList" resultType="com.archiving.comm.dto.TableInfoDto">
+		SELECT
+			T.TABLE_ID       AS tableId,
+			T.SERVER_ID      AS serverId,
+			T.TABLE_CD       AS tableCd,
+			T.TABLE_NM       AS tableNm,
+			T.TABLE_JOIN_NM  AS tableJoinNm,
+			T.DESCRIPTION    AS description,
+			T.USE_YN         AS useYn,
+			T.SAVE_PREQ_CD   AS savePreqCd,
+			T.SAVE_PREQ      AS savePreq,
+			C.DETAIL_NM      AS savePreqNm,
+			T.EXP_PREQ_CD    AS expPreqCd,
+			T.EXP_PREQ       AS expPreq,
+			CC.DETAIL_NM     AS expPreqNm
+		FROM mhdb.TB_TABLE_INFO T
+		LEFT OUTER JOIN mhdb.TB_CODE_DETAIL C
+			ON T.SAVE_PREQ_CD = C.DETAIL_CD
+			AND 'SAVE_PREQ_CD' = C.GROUP_CD
+			AND 'Y' = C.USE_YN
+		LEFT OUTER JOIN mhdb.TB_CODE_DETAIL CC
+			ON T.EXP_PREQ_CD = CC.DETAIL_CD
+			AND 'EXP_PREQ_CD' = CC.GROUP_CD
+			AND 'Y' = CC.USE_YN
+		WHERE 1=1
+		<if test='serverId != null and serverId != "" and serverId != "*" and serverId != "0"'>
+		  AND T.SERVER_ID = #{serverId}::integer
+		</if>
+		<if test='useYn != null and useYn != "" and useYn != "A"'>
+			AND T.USE_YN like concat('%', #{useYn}, '%')
+		</if>
+		<if test='tableId != null and tableId != "" and tableId != "*"'>
+			AND T.TABLE_ID = #{tableId}::integer
+		</if>
+		<if test='tableNm != null and tableNm != "" and tableNm != "*"'>
+			AND (
+				UPPER(T.TABLE_NM) LIKE '%' || UPPER(#{tableNm}) || '%'
+				OR UPPER(T.TABLE_CD) LIKE '%' || UPPER(#{tableNm}) || '%'
+				OR UPPER(T.TABLE_JOIN_NM) LIKE '%' || UPPER(#{tableNm}) || '%'
+			)
+		</if>
+		ORDER BY T.TABLE_NM
+	</select>
+
+	<!-- /* 테이블 컬럼(속성) 목록 조회 */ -->
+	<select id="selectTableAttrs" resultType="com.archiving.comm.dto.TableAttrDto">
+		SELECT
+			C.ATTR_CD        AS attrCd,
+			C.ATTR_NM        AS attrNm,
+			C.ATTR_TYPE_CD   AS attrTypeCd,
+			D.DETAIL_NM      AS attrTypeNm,
+			C.ATTR_SIZE      AS attrSize,
+			C.DECIMAL_SIZE   AS decimalSize,
+			C.ATTR_NULL_YN   AS attrNullYn,
+			C.USE_YN         AS attrUseYn,
+			C.ATTR_ORDER     AS attrOrder,
+			C.SORT_INDEX     AS sortIndex,
+			C.WHERE_INDEX    AS whereIndex,
+			C.OUTPUT_INDEX   AS outputIndex,
+			C.DATE_TYPE_YN   AS dateTypeYn,
+			C.TIME_TYPE_YN   AS timeTypeYn
+		FROM mhdb.TB_TABLE_INFO I
+		LEFT OUTER JOIN mhdb.TB_TABLE_ATTR C
+			ON I.TABLE_ID = C.TABLE_ID
+			AND 'Y' = C.USE_YN
+		LEFT OUTER JOIN mhdb.TB_CODE_DETAIL D
+			ON C.ATTR_TYPE_CD = D.DETAIL_CD
+			AND 'ATTR_TYPE_CD' = D.GROUP_CD
+		WHERE 1=1
+		  AND I.USE_YN = 'Y'
+		  AND I.TABLE_ID = #{tableId}::integer
+		<if test='serverId != null and serverId != "" and serverId != "*" and serverId != "0"'>
+		  AND I.SERVER_ID = #{serverId}::integer
+		</if>
+		ORDER BY C.ATTR_ORDER
+	</select>
+
+	<!-- /* 테이블 선택 팝업용 목록 조회 */ -->
+	<select id="selectTableInfoPop" resultType="com.archiving.comm.dto.TableInfoDto">
+		SELECT
+			T.TABLE_ID AS tableId,
+			T.TABLE_CD AS tableCd,
+			T.TABLE_NM AS tableNm
+		FROM mhdb.TB_TABLE_INFO T
+		WHERE 1=1
+		  AND T.USE_YN = 'Y'
+		<if test='tableId != null and tableId != "" and tableId != "*"'>
+			AND T.TABLE_ID = #{tableId}::integer
+		</if>
+		<if test='tableNm != null and tableNm != "" and tableNm != "*"'>
+			AND (
+				UPPER(T.TABLE_NM) LIKE '%' || UPPER(#{tableNm}) || '%'
+				OR UPPER(T.TABLE_CD) LIKE '%' || UPPER(#{tableNm}) || '%'
+				OR UPPER(T.TABLE_JOIN_NM) LIKE '%' || UPPER(#{tableNm}) || '%'
+			)
+		</if>
+		ORDER BY T.TABLE_NM
+	</select>
+
+	<!-- /* 테이블 정보 신규 등록 */ -->
+	<insert id="insertTableInfo" parameterType="com.archiving.comm.dto.TableSaveParamDto">
+		INSERT INTO mhdb.TB_TABLE_INFO (
+			TABLE_ID, TABLE_CD, TABLE_NM, TABLE_JOIN_NM, SERVER_ID,
+			SAVE_PREQ_CD, SAVE_PREQ, EXP_PREQ_CD, EXP_PREQ, DESCRIPTION, USE_YN
+		)
+		VALUES (
+			#{table_id}::integer, #{table_cd}, #{table_nm}, #{table_join_nm}, #{serverId}::integer,
+			#{save_preq_cd}, #{save_preq}::numeric, #{exp_preq_cd}, #{exp_preq}::numeric, #{description}, 'Y'
+		)
+	</insert>
+
+	<!-- /* 테이블 정보 수정 */ -->
+	<update id="updateTableInfo" parameterType="com.archiving.comm.dto.TableSaveParamDto">
+		UPDATE mhdb.TB_TABLE_INFO
+		SET
+			TABLE_CD = #{table_cd},
+			TABLE_NM = #{table_nm},
+			TABLE_JOIN_NM = #{table_join_nm},
+			SAVE_PREQ_CD = #{save_preq_cd},
+			SAVE_PREQ = #{save_preq}::numeric,
+			EXP_PREQ_CD = #{exp_preq_cd},
+			EXP_PREQ = #{exp_preq}::numeric,
+			DESCRIPTION = #{description},
+			USE_YN = #{use_yn}
+		WHERE TABLE_ID = #{table_id}::integer
+	</update>
+
+	<!-- /* 테이블 정보 사용중지(소프트 삭제) */ -->
+	<update id="softDeleteTableInfo">
+		UPDATE mhdb.TB_TABLE_INFO
+		SET USE_YN = 'N'
+		WHERE TABLE_ID = #{tableId}::integer
+	</update>
+
+	<!-- /* 테이블 컬럼(속성) 신규 등록 */ -->
+	<insert id="insertTableAttr" parameterType="com.archiving.comm.dto.TableSaveParamDto">
+		INSERT INTO mhdb.TB_TABLE_ATTR (
+			TABLE_ID, ATTR_CD, ATTR_NM, ATTR_TYPE_CD, ATTR_SIZE, DECIMAL_SIZE,
+			ATTR_NULL_YN, USE_YN, ATTR_ORDER, SORT_INDEX, WHERE_INDEX, OUTPUT_INDEX,
+			DATE_TYPE_YN, TIME_TYPE_YN
+		)
+		VALUES (
+			#{table_id}::integer, #{attr_cd}, #{attr_nm}, #{attr_type_cd}, #{attr_size}::numeric, #{decimal_size}::numeric,
+			#{attr_null_yn}, 'Y', #{attr_order}::integer, #{sort_index}::integer, #{where_index}::integer, #{output_index}::integer,
+			#{date_type_yn}, #{time_type_yn}
+		)
+	</insert>
+
+	<!-- /* 테이블 컬럼(속성) 사용중지(소프트 삭제) */ -->
+	<update id="softDeleteTableAttr">
+		UPDATE mhdb.TB_TABLE_ATTR
+		SET USE_YN = 'N'
+		WHERE TABLE_ID = #{tableId}::integer
+		  AND ATTR_CD = #{attrCd}
+	</update>
+
+	<!-- /* 테이블 컬럼(속성) 하드 삭제 */ -->
+	<delete id="deleteTableAttrHard">
+		DELETE FROM mhdb.TB_TABLE_ATTR
+		WHERE TABLE_ID = #{tableId}::integer
+		  AND ATTR_CD = #{attrCd}
+	</delete>
+
+	<!-- /* 테이블 컬럼(속성) 수정 */ -->
+	<update id="updateTableAttr" parameterType="com.archiving.comm.dto.TableSaveParamDto">
+		UPDATE mhdb.TB_TABLE_ATTR
+		SET
+			ATTR_NM = #{attr_nm},
+			ATTR_TYPE_CD = #{attr_type_cd},
+			ATTR_SIZE = #{attr_size}::numeric,
+			DECIMAL_SIZE = #{decimal_size}::numeric,
+			ATTR_NULL_YN = #{attr_null_yn},
+			DATE_TYPE_YN = #{date_type_yn},
+			TIME_TYPE_YN = #{time_type_yn},
+			SORT_INDEX = #{sort_index}::integer,
+			WHERE_INDEX = #{where_index}::integer,
+			OUTPUT_INDEX = #{output_index}::integer,
+			ATTR_ORDER = #{attr_order}::integer
+		WHERE TABLE_ID = #{table_id}::integer
+		  AND ATTR_CD = #{attr_cd}
+	</update>
+
+	<!-- /* 테이블 컬럼(속성) 존재 여부 카운트 */ -->
+	<select id="countTableAttr" resultType="int">
+		SELECT COUNT(1)
+		FROM mhdb.TB_TABLE_ATTR
+		WHERE TABLE_ID = #{tableId}::integer
+		  AND ATTR_CD = #{attrCd}
+	</select>
+
+	<!-- /* 사용 중인 테이블 컬럼(속성) 존재 여부 카운트 */ -->
+	<select id="countActiveTableAttr" resultType="int">
+		SELECT COUNT(1)
+		FROM mhdb.TB_TABLE_ATTR
+		WHERE TABLE_ID = #{tableId}::integer
+		  AND ATTR_CD = #{attrCd}
+		  AND USE_YN = 'Y'
+	</select>
+
+	<!-- /* 소프트 삭제된 테이블 컬럼(속성) 복구 및 수정 */ -->
+	<update id="reactivateTableAttr" parameterType="com.archiving.comm.dto.TableSaveParamDto">
+		UPDATE mhdb.TB_TABLE_ATTR
+		SET
+			ATTR_NM = #{attr_nm},
+			ATTR_TYPE_CD = #{attr_type_cd},
+			ATTR_SIZE = #{attr_size}::numeric,
+			DECIMAL_SIZE = #{decimal_size}::numeric,
+			ATTR_NULL_YN = #{attr_null_yn},
+			DATE_TYPE_YN = #{date_type_yn},
+			TIME_TYPE_YN = #{time_type_yn},
+			SORT_INDEX = #{sort_index}::integer,
+			WHERE_INDEX = #{where_index}::integer,
+			OUTPUT_INDEX = #{output_index}::integer,
+			ATTR_ORDER = #{attr_order}::integer,
+			USE_YN = 'Y'
+		WHERE TABLE_ID = #{table_id}::integer
+		  AND ATTR_CD = #{attr_cd}
+	</update>
+
+</mapper>
+

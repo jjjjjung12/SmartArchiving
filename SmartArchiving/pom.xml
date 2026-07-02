@@ -14,9 +14,12 @@
     <groupId>com.archiving</groupId>
     <artifactId>SmartArchiving</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <packaging>war</packaging>
 
     <properties>
         <java.version>17</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
     <dependencies>
@@ -61,24 +64,57 @@
             <artifactId>postgresql</artifactId>
         </dependency>
 
-        <!--
-          SQream JDBC 드라이버는 Maven Central에 없습니다.
-          드라이버 jar를 로컬 저장소에 설치한 뒤 아래 의존성 주석을 해제하세요.
-
-          mvn install:install-file -s C:/workspace/archiving_workspace/web/setting.xml ^
-            -Dfile=sqream-jdbc-5.2.0.jar ^
-            -DgroupId=com.sqream -DartifactId=sqream-jdbc -Dversion=5.2.0 -Dpackaging=jar
-
+        <!-- SQream / Petra / INITECH 등 벤더 JAR은 WEB-INF/lib에 두고 컴파일 시 system scope로 참조합니다. -->
         <dependency>
             <groupId>com.sqream</groupId>
             <artifactId>sqream-jdbc</artifactId>
             <version>5.2.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/webapp/WEB-INF/lib/sqream-jdbc-5.2.0.jar</systemPath>
         </dependency>
-        -->
-
+        <dependency>
+            <groupId>com.sinsiway</groupId>
+            <artifactId>sinsiway</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/webapp/WEB-INF/lib/sinsiway.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.sinsiway</groupId>
+            <artifactId>petra-cipher-api</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/webapp/WEB-INF/lib/PetraCipherAPI.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.initech</groupId>
+            <artifactId>inicrypto</artifactId>
+            <version>4.2.10</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/webapp/WEB-INF/lib/INICrypto_v4.2.10.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.initech</groupId>
+            <artifactId>external-nhbank</artifactId>
+            <version>4.2.1.00-NHBank14</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/webapp/WEB-INF/lib/external_v4.2.1.00_NHBank14.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.initech</groupId>
+            <artifactId>inisafetoolset</artifactId>
+            <version>1.1.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/webapp/WEB-INF/lib/INISAFEToolSet_v1.1.1.jar</systemPath>
+        </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
+            <version>1.1.1</version>
         </dependency>
 
         <!-- JSP -->
@@ -158,8 +194,25 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <includeSystemScope>true</includeSystemScope>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.3.1</version>
+                <configuration>
+                    <warSourceDirectory>src/main/webapp</warSourceDirectory>
+                </configuration>
             </plugin>
         </plugins>
     </build>

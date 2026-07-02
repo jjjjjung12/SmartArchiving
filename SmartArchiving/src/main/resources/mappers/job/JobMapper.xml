@@ -1,0 +1,603 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.job.dao.mapper.JobMapper">
+
+	<!-- =========================
+	     Load job list / history
+	     ========================= -->
+	<!-- /* 로드 잡 목록 조회(서버/잡ID/잡명/사용여부 조건) */ -->
+	<select id="selectLoadJobList" resultType="map">
+		SELECT
+			  J.SERVER_ID
+			, J.JOB_ID
+			, J.JOB_NM
+			, J.TABLE_ID
+			, J.SOURCE_PATH
+			, J.SOURCE_FILE
+			, J.INFO_PATH
+			, J.INFO_FILE
+			, J.JOB_TM
+			, J.SCHEDULE_YN
+			, J.SCHEDULE_VALUE
+			, J.ERROR_PATH
+			, J.SOURCE_DEL_YN
+			, J.LAST_COL_YN
+			, J.JOB_CD
+			, J.USE_YN
+			, S.SERVER_NM
+			, T.TABLE_CD
+			, T.TABLE_NM
+		FROM mhdb.TB_LOAD_JOB_MST J
+		LEFT OUTER JOIN mhdb.TB_TABLE_INFO T ON J.TABLE_ID = T.TABLE_ID
+		JOIN mhdb.TB_SERVER S ON J.SERVER_ID = S.SERVER_ID
+		WHERE 1 = 1
+		<if test='useYn != null and useYn != "" and !useYn.equals("A")'>
+			AND J.USE_YN = #{useYn}
+		</if>
+		<if test='serverId != null and serverId != "" and !serverId.equals("*")'>
+			AND J.SERVER_ID = #{serverId}::integer
+		</if>
+		<if test='jobId != null and jobId != "" and !jobId.equals("*")'>
+			AND J.JOB_ID = #{jobId}::integer
+		</if>
+		<if test='(jobId == null or jobId.equals("*")) and jobNm != null and jobNm != ""'>
+			AND (J.JOB_NM LIKE CONCAT('%', #{jobNm}, '%') OR J.JOB_CD LIKE CONCAT('%', #{jobNm}, '%'))
+		</if>
+		ORDER BY J.JOB_NM
+	</select>
+
+	<!-- /* 로드 잡 이력 조회(기간/상태 조건) */ -->
+	<select id="selectLoadJobHistory" resultType="map">
+		SELECT
+			  J.SERVER_ID
+			, J.JOB_NM
+			, H.JOB_ID
+			, H.JOB_TM
+			, H.SOURCE_FILE
+			, H.SOURCE_SIZE
+			, H.SCAN_RECORD
+			, H.SCAN_REG_TM
+			, H.SCAN_REG_TM AS SCAN_END_TM
+			, H.SCAN_STAT_CD
+			, H.SCAN_MSG_CD
+			, H.SCAN_MSG
+			, H.LOAD_REG_TM
+			, H.LOAD_END_TM
+			, H.LOAD_STAT_CD
+			, H.LOAD_MSG_CD
+			, H.LOAD_MSG
+			, H.LOAD_RECORD
+			, H.SCAN_STAT_CD AS SCAN_STAT_NM
+			, C2.DETAIL_NM AS FILTER_STAT_NM
+			, H.LOAD_STAT_CD AS LOAD_STAT_NM
+			, CASE WHEN H.LOAD_STAT_CD IN ('S', '99', '00') THEN COALESCE(H.LOAD_RECORD, 0) ELSE 0			/* Sqream 적재 성공 건수, 전체 건수 - COALESCE(H.LOAD_RECORD, 0) AS PROC_CNT */
+              END AS LOAD_PROC_CNT
+			, CASE WHEN H.SCAN_STAT_CD IN ('S', '99', '00') THEN COALESCE(H.SCAN_RECORD, 0) ELSE 0
+              END AS SCAN_PROC_CNT
+		FROM mhdb.TB_LOAD_JOB_HIST H
+		LEFT OUTER JOIN mhdb.TB_CODE_DETAIL C2
+			ON H.SCAN_MSG_CD = C2.DETAIL_CD AND 'FILTER_STAT_CD' = C2.GROUP_CD
+		JOIN mhdb.TB_LOAD_JOB_MST J ON H.JOB_ID = J.JOB_ID
+		WHERE 1 = 1
+		<if test='serverId != null and serverId != "" and !serverId.equals("*")'>
+			AND J.SERVER_ID = #{serverId}::integer
+		</if>
+		<if test='jobId != null and jobId != "" and !jobId.equals("*")'>
+			AND J.JOB_ID = #{jobId}::integer
+		</if>
+		<if test='(jobId == null or jobId.equals("*")) and jobNm != null and jobNm != ""'>
+			AND J.JOB_NM LIKE CONCAT('%', #{jobNm}, '%')
+		</if>
+		<if test='jobTmFrom != null and jobTmFrom != "" and jobTmTo != null and jobTmTo != ""'>
+		    AND H.JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000')
+			AND H.JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+		</if>
+		<if test="stat != null and stat.equals('E')">
+			AND (H.SCAN_STAT_CD != '00' OR H.LOAD_STAT_CD != '00')
+		</if>
+		ORDER BY H.JOB_TM DESC
+	</select>
+
+	<!-- =========================
+	     Conv job list / history
+	     ========================= -->
+	<!-- /* 변환(Conv) 잡 목록 조회(잡ID/잡명/사용여부 조건) */ -->
+	<select id="selectConvJobList" resultType="map">
+		SELECT
+			  J.OUTPUT1_SERVERID
+			, J.OUTPUT2_SERVERID
+			, J.JOB_ID
+			, J.JOB_NM
+			, J.OUTPUT1_TABLEID
+			, (SELECT TABLE_CD FROM mhdb.TB_TABLE_INFO WHERE J.OUTPUT1_TABLEID = TABLE_ID) AS TABLE_CD
+			, (SELECT TABLE_CD FROM mhdb.TB_TABLE_INFO WHERE J.OUTPUT2_TABLEID = TABLE_ID) AS TABLE_CD2
+			, (SELECT SERVER_NM FROM mhdb.TB_SERVER G WHERE J.OUTPUT1_SERVERID = G.SERVER_ID) AS OUTPUT1_SERVERNM
+			, (SELECT SERVER_NM FROM mhdb.TB_SERVER G WHERE J.OUTPUT2_SERVERID = G.SERVER_ID) AS OUTPUT2_SERVERNM
+			, J.OUTPUT2_TABLEID
+			, J.SOURCE_PATH
+			, J.SOURCE_FILE
+			, J.OUTPUT1_INFO_PATH
+			, J.OUTPUT1_INFO_FILE
+			, J.OUTPUT2_INFO_PATH
+			, J.OUTPUT2_INFO_FILE
+			, J.JOB_TM
+			, J.SCHEDULE_YN
+			, J.SCHEDULE_VALUE
+			, J.SOURCE_DEL_YN
+			, J.LAST_COL_YN
+			, J.JOB_CD
+			, J.USE_YN
+		FROM mhdb.TB_CONV_JOB_MST J
+		WHERE 1 = 1
+		<if test='useYn != null and useYn != "" and !useYn.equals("A")'>
+			AND J.USE_YN = #{useYn}
+		</if>
+		<if test='jobId != null and jobId != "" and !jobId.equals("*")'>
+			AND J.JOB_ID = #{jobId}::integer
+		</if>
+		<if test='(jobId == null or jobId.equals("*")) and jobNm != null and jobNm != ""'>
+			AND (J.JOB_NM LIKE CONCAT('%', #{jobNm}, '%') OR J.JOB_CD LIKE CONCAT('%', #{jobNm}, '%'))
+		</if>
+		ORDER BY J.JOB_NM
+	</select>
+
+	<!-- /* 변환(Conv) 잡 이력 조회(기간/파일명 조건) */ -->
+	<select id="selectConvJobHistory" resultType="map">
+		SELECT
+			  J.JOB_NM
+			, H.JOB_ID
+			, H.JOB_TM
+			, H.CONVERT_FILE
+			, H.CONVERT_SIZE
+			, H.OUTPUT1_INFO_FILE
+			, H.OUTPUT2_INFO_FILE
+			, H.CONVERT_RECORD
+			, H.CONVERT_REG_TM
+			, H.CONVERT_STAT_CD
+			, H.CONVERT_MSG_CD
+			, H.CONVERT_MSG
+			, J.OUTPUT1_SERVERID
+			, CASE WHEN H.CONVERT_STAT_CD IN ('S', '99', '00') THEN COALESCE(H.CONVERT_RECORD, 0) ELSE 0		/* 변환 처리 건수, 전체 건수 - COALESCE(H.CONVERT_RECORD, 0) AS PROC_CNT */
+              END AS PROC_CNT
+		FROM mhdb.TB_CONV_JOB_HIST H
+		JOIN mhdb.TB_CONV_JOB_MST J ON H.JOB_ID = J.JOB_ID
+		WHERE 1 = 1
+		<if test='jobId != null and jobId != "" and !jobId.equals("*")'>
+			AND J.JOB_ID = #{jobId}::integer
+		</if>
+		<if test='(jobId == null or jobId.equals("*")) and jobNm != null and jobNm != ""'>
+			AND J.JOB_NM ILIKE CONCAT('%', #{jobNm}, '%')
+		</if>
+		<if test='jobTmFrom != null and jobTmFrom != "" and jobTmTo != null and jobTmTo != ""'>
+		    AND H.JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000')
+			AND H.JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+		</if>
+		<if test='infoFileNm != null and infoFileNm != "" and !infoFileNm.equals("*")'>
+			AND H.OUTPUT1_INFO_FILE ILIKE CONCAT('%', #{infoFileNm}, '%')
+		</if>
+		ORDER BY H.JOB_SEQ DESC
+	</select>
+
+	<!-- =========================
+	     DB job list / history
+	     ========================= -->
+	<!-- /* DB 잡 목록 조회(데몬/잡ID/잡명/사용여부 조건) */ -->
+	<select id="selectDbJobList" resultType="map">
+		SELECT
+			  J.JOB_ID
+			, J.JOB_NAME
+			, J.DAEMON_ID
+			, F.DAEMON_CD
+			, J.DELIMITER
+			, F.DAEMON_NM
+			, J.BASE_DATE
+			, F.DAEMON_RESTART_YN
+			, J.USE_YN
+			, (SELECT SERVER_NM FROM mhdb.TB_SERVER G WHERE J.SRC_SERVER_ID = G.SERVER_ID) AS SRC_SERVER_NM
+			, J.SRC_SERVER_ID
+			, J.SRC_TABLE_ID
+			, (SELECT TABLE_CD FROM mhdb.TB_TABLE_INFO T WHERE J.SRC_TABLE_ID = T.TABLE_ID) AS SRC_TABLE_CD
+			, (SELECT TABLE_NM FROM mhdb.TB_TABLE_INFO T WHERE J.SRC_TABLE_ID = T.TABLE_ID) AS SRC_TABLE_NM
+			, J.DES_FILE_PATH
+			, J.DES_FLAG_PATH
+			, J.DES_TABLE_ID
+			, J.DES_SERVER_ID
+			, (SELECT SERVER_NM FROM mhdb.TB_SERVER G WHERE J.DES_SERVER_ID = G.SERVER_ID) AS DES_SERVER_NM
+			, (SELECT TABLE_CD FROM mhdb.TB_TABLE_INFO T WHERE J.DES_TABLE_ID = T.TABLE_ID) AS DES_TABLE_CD
+			, (SELECT TABLE_NM FROM mhdb.TB_TABLE_INFO T WHERE J.DES_TABLE_ID = T.TABLE_ID) AS DES_TABLE_NM
+			, J.JOB_SCHEDULE
+			, J.JOB_TYPE
+		FROM mhdb.TB_DB_JOB_MST J
+		JOIN mhdb.TB_DAEMON F ON J.DAEMON_ID = F.DAEMON_ID
+		WHERE 1 = 1
+			AND F.DAEMON_ID = #{daemonId}
+		<if test='useYn != null and useYn != "" and !useYn.equals("A")'>
+			AND J.USE_YN = #{useYn}
+		</if>
+		<if test='jobId != null and jobId != "" and !jobId.equals("*")'>
+			AND J.JOB_ID = #{jobId}::integer
+		</if>
+		<if test='(jobId == null or jobId.equals("*")) and jobNm != null and jobNm != ""'>
+			AND J.JOB_NAME LIKE CONCAT('%', #{jobNm}, '%')
+		</if>
+		ORDER BY J.JOB_NAME
+	</select>
+
+	<!-- /* DB 잡 이력 조회(데몬/기간 조건) */ -->
+	<select id="selectDbJobHistory" resultType="map">
+		SELECT
+			  H.JOB_SEQ
+			, H.JOB_ID
+			, J.JOB_NAME
+			, H.JOB_TM
+			, H.START_DATETIME
+			, H.END_DATETIME
+			, H.JOB_STTS
+			, H.JOB_MSG
+			, H.JOB_TYPE
+			, H.SRC_DATA_ROWS
+			, H.DES_DATA_ROWS
+			, H.DES_FILE_PATH
+			, H.DES_JOBTIME
+			, CASE
+			    WHEN H.JOB_STTS = 'S' THEN
+			      CASE J.DAEMON_ID
+			        WHEN 1 THEN COALESCE(H.SRC_DATA_ROWS, 0)
+			        WHEN 2 THEN COALESCE(H.SRC_DATA_ROWS, 0)
+			        WHEN 3 THEN COALESCE(H.SRC_DATA_ROWS, 0) - COALESCE(H.DES_DATA_ROWS, 0)
+			        ELSE COALESCE(H.SRC_DATA_ROWS, 0)
+			      END
+			    ELSE 0
+			  END AS PROC_CNT
+		FROM mhdb.TB_DB_JOB_HIST H
+		JOIN mhdb.TB_DB_JOB_MST J ON H.JOB_ID = J.JOB_ID
+<!-- 		JOIN mhdb.TB_DAEMON K ON J.DAEMON_ID = D.DAEMON_ID -->
+		WHERE 1 = 1
+			AND J.DAEMON_ID = #{daemonId}::integer
+		<if test='jobId != null and jobId != "" and !jobId.equals("*")'>
+			AND J.JOB_ID = #{jobId}::integer
+		</if>
+		<if test='(jobId == null or jobId.equals("*")) and jobNm != null and jobNm != ""'>
+			AND J.JOB_NAME LIKE CONCAT('%', #{jobNm}, '%')
+		</if>
+		<if test='jobTmFrom != null and jobTmFrom != "" and jobTmTo != null and jobTmTo != ""'>
+		    AND H.JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000')
+			AND H.JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+		</if>
+		ORDER BY H.JOB_TM DESC
+	</select>
+
+	<!-- /* 특정 일자(jobDate) 기준 export 이력 조회 */ -->
+	<select id="selectExportDateHistory" resultType="map">
+		SELECT
+			  H.JOB_SEQ
+			, H.JOB_ID
+			, J.JOB_NAME
+			, H.JOB_TM
+			, H.START_DATETIME
+			, H.END_DATETIME
+			, H.JOB_STTS
+			, H.JOB_MSG
+			, H.JOB_TYPE
+			, H.SRC_DATA_ROWS
+			, H.DES_DATA_ROWS
+			, H.DES_FILE_PATH
+			, H.DES_JOBTIME
+			, H.DES_FILE_PATH AS DES_JOBFILE
+		FROM mhdb.TB_DB_JOB_HIST H
+		JOIN mhdb.TB_DB_JOB_MST J ON H.JOB_ID = J.JOB_ID
+		JOIN mhdb.TB_DAEMON K ON H.MDFY_DAEMON = K.DAEMON_CD
+		WHERE 1 = 1
+			AND J.DAEMON_ID = '2'
+			AND replace(H.DES_JOBTIME,'-','') = #{jobDate}
+		ORDER BY H.JOB_TM DESC
+	</select>
+
+	<!-- =========================
+	     TB_JOB_HISTORY
+	     ========================= -->
+	<!-- /* 잡 이력 조회(TB_JOB_HISTORY 기반, 기간/상태 조건) */ -->
+	<select id="selectJobHistory" resultType="map">
+		SELECT
+			  J.SERVER_ID
+			, J.JOB_NM
+			, H.JOB_ID
+			, H.JOB_TM
+			, H.SOURCE_FILE
+			, H.SOURCE_SIZE
+			, H.SCAN_REG_TM
+			, H.SCAN_END_TM
+			, H.SCAN_STAT_CD
+			, H.SCAN_MSG_CD
+			, H.SCAN_MSG
+			, H.FILTER_REG_TM
+			, H.FILTER_END_TM
+			, H.FILTER_STAT_CD
+			, H.FILTER_MSG_CD
+			, H.FILTER_MSG
+			, H.LOAD_REG_TM
+			, H.LOAD_END_TM
+			, H.LOAD_STAT_CD
+			, H.LOAD_MSG_CD
+			, H.LOAD_MSG
+			, H.SCAN_STAT_CD AS SCAN_STAT_NM
+			, C2.DETAIL_NM AS FILTER_STAT_NM
+			, H.LOAD_STAT_CD AS LOAD_STAT_NM
+		FROM mhdb.TB_JOB_HISTORY H
+		LEFT OUTER JOIN mhdb.TB_CODE_DETAIL C2
+			ON H.SCAN_MSG_CD = C2.DETAIL_CD AND 'FILTER_STAT_CD' = C2.GROUP_CD
+		JOIN mhdb.TB_JOB_MST J ON H.JOB_ID = J.JOB_ID
+		WHERE 1 = 1
+		<if test='serverId != null and serverId != "" and !serverId.equals("*")'>
+			AND J.SERVER_ID = #{serverId}::integer
+		</if>
+		<if test='jobId != null and jobId != "" and !jobId.equals("*")'>
+			AND J.JOB_ID = #{jobId}::integer
+		</if>
+		<if test='(jobId == null or jobId.equals("*")) and jobNm != null and jobNm != ""'>
+			AND H.JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000')
+			AND H.JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			AND J.JOB_NM LIKE CONCAT('%', #{jobNm}, '%')
+			<if test="stat != null and stat.equals('E')">
+				AND (H.SCAN_STAT_CD != '00' OR H.FILTER_STAT_CD != '00' OR H.LOAD_STAT_CD != '00')
+			</if>
+		</if>
+		ORDER BY H.JOB_TM DESC
+	</select>
+
+	<!-- =========================
+	     monitor (Load Job) A/B/C
+	     ========================= -->
+	<!-- /* 로드 잡 모니터링 요약(A) 조회 */ -->
+	<select id="selectLoadJobMonitorA" resultType="map">
+		SELECT STEP, SUM(C1) AS TARGET, SUM(C2) AS FINISH, SUM(C3) AS ERROR, SUM(C4) AS RESTART, MAX(DETAIL_NM) AS STEP_NM
+		FROM (
+			SELECT '1' AS STEP,COUNT(*) AS C1, 0 AS C2, 0 AS C3, 0 AS C4
+			  FROM mhdb.TB_LOAD_JOB_HIST
+			 WHERE (SCAN_STAT_CD IS NOT NULL AND SCAN_STAT_CD != '') AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '1',0, COUNT(*),0 , 0 FROM mhdb.TB_LOAD_JOB_HIST
+			 WHERE SCAN_STAT_CD = '99' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '1',0, 0, COUNT(*) ,0 FROM mhdb.TB_LOAD_JOB_HIST
+			 WHERE SCAN_STAT_CD != '99' AND SCAN_MSG_CD = 'E' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '1',0, 0,0, COUNT(*) FROM mhdb.TB_LOAD_JOB_HIST
+			 WHERE SCAN_STAT_CD = '44' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '2',COUNT(*), 0, 0,0 FROM mhdb.TB_LOAD_JOB_HIST
+			 WHERE SCAN_STAT_CD = '99' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '2',0, COUNT(*),0 ,0 FROM mhdb.TB_LOAD_JOB_HIST
+			 WHERE SCAN_STAT_CD = '99' AND FILTER_STAT_CD = '99' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '2',0, 0, COUNT(*) ,0 FROM mhdb.TB_LOAD_JOB_HIST
+			 WHERE SCAN_STAT_CD = '99' AND FILTER_STAT_CD != '99' AND FILTER_MSG_CD = 'E' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '2',0, 0,0, COUNT(*) FROM mhdb.TB_LOAD_JOB_HIST
+			 WHERE FILTER_STAT_CD = '44' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '3',COUNT(*), 0, 0,0 FROM mhdb.TB_LOAD_JOB_HIST
+			 WHERE FILTER_STAT_CD = '99' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '3',0, COUNT(*),0 ,0 FROM mhdb.TB_LOAD_JOB_HIST
+			 WHERE FILTER_STAT_CD = '99' AND LOAD_STAT_CD = '99' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '3',0, 0, COUNT(*) ,0 FROM mhdb.TB_LOAD_JOB_HIST
+			 WHERE FILTER_STAT_CD = '99' AND LOAD_STAT_CD != '99' AND LOAD_MSG_CD = 'E' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '3',0, 0,0, COUNT(*) FROM mhdb.TB_LOAD_JOB_HIST
+			 WHERE LOAD_STAT_CD = '44' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+		) T1, mhdb.TB_CODE_DETAIL T2
+		WHERE T1.STEP = T2.DETAIL_CD AND T2.GROUP_CD ='STEP'
+		GROUP BY STEP
+		ORDER BY STEP
+	</select>
+
+	<!-- /* 로드 잡 모니터링 요약(B: 라이선스/사용량) 조회 */ -->
+	<select id="selectLoadJobMonitorB" resultType="map">
+		SELECT
+			  (L.LICENSE/1024) AS LICENSE
+			, TRUNC(CAST((H.SOURCE_SIZE)/1024/1024/1024 as numeric),4) AS SOURCE_SIZE
+			, TRUNC(CAST(((L.LICENSE/1024) - (H.SOURCE_SIZE)/1024/1024/1024) as numeric),4) AS FREE_SIZE
+			, TRUNC(CAST(CEIL((H.SOURCE_SIZE)/1024/1024/1024) / (L.LICENSE/1024) * 100 as numeric),4) AS RATE
+		FROM (SELECT SUM(SOURCE_SIZE) AS SOURCE_SIZE FROM mhdb.TB_LOAD_JOB_HIST) H,
+			 (SELECT SUM(LICENSE) AS LICENSE FROM mhdb.TB_CONFIG) L
+	</select>
+
+	<!-- /* 로드 잡 모니터링 상세(C) 조회 */ -->
+	<select id="selectLoadJobMonitorC" resultType="map">
+		SELECT
+			  S.SERVER_NM
+			, H.SOURCE_FILE
+			, H.JOB_TM
+			, H.SCAN_END_TM
+			, H.FILTER_END_TM
+			, H.LOAD_END_TM
+			, (H.SCAN_MSG||' '||H.FILTER_MSG||' '||H.LOAD_MSG) AS MSG
+		FROM mhdb.TB_LOAD_JOB_HIST H
+		JOIN mhdb.TB_LOAD_JOB_MST J ON H.JOB_ID = J.JOB_ID
+		JOIN mhdb.TB_SERVER S ON J.SERVER_ID = S.SERVER_ID
+		WHERE 1=1
+		  AND H.JOB_TM <![CDATA[>=]]> #{jobTmFrom}
+		  AND H.JOB_TM <![CDATA[<=]]> #{jobTmTo}
+		ORDER BY H.JOB_TM DESC
+	</select>
+
+	<!-- =========================
+	     monitor2back (TB_JOB_HISTORY) A/B/C
+	     ========================= -->
+	<!-- /* (TB_JOB_HISTORY) 모니터링 요약(A) 조회 */ -->
+	<select id="selectJobMonitor2A" resultType="map">
+		SELECT STEP, SUM(C1) AS TARGET, SUM(C2) AS FINISH, SUM(C3) AS ERROR, SUM(C4) AS RESTART, MAX(DETAIL_NM) AS STEP_NM
+		FROM (
+			SELECT '1' AS STEP,COUNT(*) AS C1, 0 AS C2, 0 AS C3, 0 AS C4
+			  FROM mhdb.TB_JOB_HISTORY
+			 WHERE (SCAN_STAT_CD IS NOT NULL AND SCAN_STAT_CD != '') AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '1',0, COUNT(*),0 , 0 FROM mhdb.TB_JOB_HISTORY
+			 WHERE SCAN_STAT_CD = '99' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '1',0, 0, COUNT(*) ,0 FROM mhdb.TB_JOB_HISTORY
+			 WHERE SCAN_STAT_CD != '99' AND SCAN_MSG_CD = 'E' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '1',0, 0,0, COUNT(*) FROM mhdb.TB_JOB_HISTORY
+			 WHERE SCAN_STAT_CD = '44' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '2',COUNT(*), 0, 0,0 FROM mhdb.TB_JOB_HISTORY
+			 WHERE SCAN_STAT_CD = '99' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '2',0, COUNT(*),0 ,0 FROM mhdb.TB_JOB_HISTORY
+			 WHERE SCAN_STAT_CD = '99' AND FILTER_STAT_CD = '99' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '2',0, 0, COUNT(*) ,0 FROM mhdb.TB_JOB_HISTORY
+			 WHERE SCAN_STAT_CD = '99' AND FILTER_STAT_CD != '99' AND FILTER_MSG_CD = 'E' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '2',0, 0,0, COUNT(*) FROM mhdb.TB_JOB_HISTORY
+			 WHERE FILTER_STAT_CD = '44' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '3',COUNT(*), 0, 0,0 FROM mhdb.TB_JOB_HISTORY
+			 WHERE FILTER_STAT_CD = '99' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '3',0, COUNT(*),0 ,0 FROM mhdb.TB_JOB_HISTORY
+			 WHERE FILTER_STAT_CD = '99' AND LOAD_STAT_CD = '99' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '3',0, 0, COUNT(*) ,0 FROM mhdb.TB_JOB_HISTORY
+			 WHERE FILTER_STAT_CD = '99' AND LOAD_STAT_CD != '99' AND LOAD_MSG_CD = 'E' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+			UNION ALL SELECT '3',0, 0,0, COUNT(*) FROM mhdb.TB_JOB_HISTORY
+			 WHERE LOAD_STAT_CD = '44' AND JOB_TM <![CDATA[>=]]> CONCAT(#{jobTmFrom}, '0000') AND JOB_TM <![CDATA[<=]]> CONCAT(#{jobTmTo}, '2359')
+		) T1, mhdb.TB_CODE_DETAIL T2
+		WHERE T1.STEP = T2.DETAIL_CD AND T2.GROUP_CD ='STEP'
+		GROUP BY STEP
+		ORDER BY STEP
+	</select>
+
+	<!-- /* (TB_JOB_HISTORY) 모니터링 요약(B: 라이선스/사용량) 조회 */ -->
+	<select id="selectJobMonitor2B" resultType="map">
+		SELECT
+			  (L.LICENSE/1024) AS LICENSE
+			, TRUNC(CAST((H.SOURCE_SIZE)/1024/1024/1024 as numeric),4) AS SOURCE_SIZE
+			, TRUNC(CAST(((L.LICENSE/1024) - (H.SOURCE_SIZE)/1024/1024/1024) as numeric),4) AS FREE_SIZE
+			, TRUNC(CAST(CEIL((H.SOURCE_SIZE)/1024/1024/1024) / (L.LICENSE/1024) * 100 as numeric),4) AS RATE
+		FROM (SELECT SUM(SOURCE_SIZE) AS SOURCE_SIZE FROM mhdb.TB_JOB_HISTORY) H,
+			 (SELECT SUM(LICENSE) AS LICENSE FROM mhdb.TB_CONFIG) L
+	</select>
+
+	<!-- /* (TB_JOB_HISTORY) 모니터링 상세(C) 조회 */ -->
+	<select id="selectJobMonitor2C" resultType="map">
+		SELECT
+			  S.SERVER_NM
+			, H.SOURCE_FILE
+			, H.JOB_TM
+			, H.SCAN_END_TM
+			, H.FILTER_END_TM
+			, H.LOAD_END_TM
+			, (H.SCAN_MSG||' '||H.FILTER_MSG||' '||H.LOAD_MSG) AS MSG
+		FROM mhdb.TB_JOB_HISTORY H
+		JOIN mhdb.TB_JOB_MST J ON H.JOB_ID = J.JOB_ID
+		JOIN mhdb.TB_SERVER S ON J.SERVER_ID = S.SERVER_ID
+		WHERE 1=1
+		  AND H.JOB_TM <![CDATA[>=]]> #{jobTmFrom}
+		  AND H.JOB_TM <![CDATA[<=]]> #{jobTmTo}
+		ORDER BY H.JOB_TM DESC
+	</select>
+
+	<!-- =========================
+	     save statements
+	     ========================= -->
+	<!-- /* 로드 잡 신규 등록 */ -->
+	<insert id="insertLoadJob" parameterType="com.archiving.job.dto.LoadJobSaveParamDto">
+		INSERT INTO mhdb.TB_LOAD_JOB_MST
+			(SERVER_ID, JOB_CD, JOB_NM, TABLE_ID, SOURCE_PATH, SOURCE_FILE, INFO_PATH, INFO_FILE, JOB_TM,
+			 SCHEDULE_YN, SCHEDULE_VALUE, ERROR_PATH, SOURCE_DEL_YN, LAST_COL_YN, USE_YN)
+		VALUES
+			(#{server_id}::integer, #{job_cd}, #{job_nm}, #{table_id}::integer, #{source_path}, #{source_file}, #{info_path}, #{info_file}, #{job_tm},
+			 #{schedule_yn}, #{schedule_value}, #{error_path}, #{source_del_yn}, #{last_col_yn}, #{use_yn})
+	</insert>
+
+	<!-- /* 로드 잡 수정 */ -->
+	<update id="updateLoadJob" parameterType="com.archiving.job.dto.LoadJobSaveParamDto">
+		UPDATE mhdb.TB_LOAD_JOB_MST
+		   SET SERVER_ID = #{server_id}::integer
+			 , JOB_NM = #{job_nm}
+			 , JOB_CD = #{job_cd}
+			 , TABLE_ID = #{table_id}::integer
+			 , SOURCE_PATH = #{source_path}
+			 , SOURCE_FILE = #{source_file}
+			 , INFO_PATH = #{info_path}
+			 , INFO_FILE = #{info_file}
+			 , JOB_TM = #{job_tm}
+			 , SCHEDULE_YN = #{schedule_yn}
+			 , SCHEDULE_VALUE = #{schedule_value}
+			 , ERROR_PATH = #{error_path}
+			 , SOURCE_DEL_YN = #{source_del_yn}
+			 , LAST_COL_YN = #{last_col_yn}
+			 , USE_YN = #{use_yn}
+		 WHERE JOB_ID = #{job_id}::integer
+	</update>
+
+	<!-- /* 로드 잡 삭제 */ -->
+	<delete id="deleteLoadJob">
+		DELETE FROM mhdb.TB_LOAD_JOB_MST WHERE JOB_ID = #{jobId}::integer
+	</delete>
+
+	<!-- /* 변환(Conv) 잡 신규 등록 */ -->
+	<insert id="insertConvJob" parameterType="com.archiving.job.dto.ConvJobSaveParamDto">
+		INSERT INTO mhdb.TB_CONV_JOB_MST
+			(OUTPUT1_SERVERID, OUTPUT2_SERVERID, JOB_CD, JOB_NM, OUTPUT1_TABLEID, OUTPUT2_TABLEID,
+			 SOURCE_PATH, SOURCE_FILE, OUTPUT1_INFO_PATH, OUTPUT2_INFO_PATH, OUTPUT1_INFO_FILE, OUTPUT2_INFO_FILE,
+			 JOB_TM, SCHEDULE_YN, SCHEDULE_VALUE, SOURCE_DEL_YN, LAST_COL_YN, USE_YN)
+		VALUES
+			(#{output1_server_id}::integer, #{output2_server_id}::integer, #{job_cd}, #{job_nm}, #{table_id}::integer, #{table_id2}::integer,
+			 #{source_path}, #{source_file}, #{info_path}, #{info_path2}, #{info_file}, #{info_file2},
+			 #{job_tm}, #{schedule_yn}, #{schedule_value}, #{source_del_yn}, #{last_col_yn}, #{use_yn})
+	</insert>
+
+	<!-- /* 변환(Conv) 잡 수정 */ -->
+	<update id="updateConvJob" parameterType="com.archiving.job.dto.ConvJobSaveParamDto">
+		UPDATE mhdb.TB_CONV_JOB_MST
+		   SET OUTPUT1_SERVERID = #{output1_server_id}::integer
+			 , OUTPUT2_SERVERID = #{output2_server_id}::integer
+			 , JOB_NM = #{job_nm}
+			 , JOB_CD = #{job_cd}
+			 , OUTPUT1_TABLEID = #{table_id}::integer
+			 , OUTPUT2_TABLEID = #{table_id2}::integer
+			 , SOURCE_PATH = #{source_path}
+			 , SOURCE_FILE = #{source_file}
+			 , OUTPUT1_INFO_PATH = #{info_path}
+			 , OUTPUT1_INFO_FILE = #{info_file}
+			 , OUTPUT2_INFO_PATH = #{info_path2}
+			 , OUTPUT2_INFO_FILE = #{info_file2}
+			 , JOB_TM = #{job_tm}
+			 , SCHEDULE_YN = #{schedule_yn}
+			 , SCHEDULE_VALUE = #{schedule_value}
+			 , SOURCE_DEL_YN = #{source_del_yn}
+			 , LAST_COL_YN = #{last_col_yn}
+			 , USE_YN = #{use_yn}
+		 WHERE JOB_ID = #{job_id}
+	</update>
+
+	<!-- /* 변환(Conv) 잡 삭제 */ -->
+	<delete id="deleteConvJob">
+		DELETE FROM mhdb.TB_CONV_JOB_MST WHERE JOB_ID = NULLIF(#{jobId}, '')::integer
+	</delete>
+
+	<!-- /* DB 잡 신규 등록 */ -->
+	<insert id="insertDbJob" parameterType="com.archiving.job.dto.DbJobSaveParamDto">
+		INSERT INTO mhdb.TB_DB_JOB_MST
+			(SRC_SERVER_ID, JOB_NAME, DAEMON_ID, DELIMITER, SRC_TABLE_ID,
+			 DES_FILE_PATH, DES_FLAG_PATH, BASE_DATE, JOB_SCHEDULE, JOB_TYPE, USE_YN,
+			 DES_TABLE_ID, DES_SERVER_ID)
+		VALUES
+			(#{src_server_id}::integer, #{job_nm}, #{daemon_id}, #{delimiter}, #{src_table_id}::integer,
+			 #{des_file_path}, #{des_flag_path}, #{base_date}, #{job_schedule}, #{job_type}, #{use_yn},
+			 #{des_table_id}::integer, #{des_server_id}::integer)
+	</insert>
+
+	<!-- /* DB 잡 수정 */ -->
+	<update id="updateDbJob" parameterType="com.archiving.job.dto.DbJobSaveParamDto">
+		UPDATE mhdb.TB_DB_JOB_MST
+		   SET SRC_SERVER_ID = #{src_server_id}::integer
+			 , DES_SERVER_ID = #{des_server_id}::integer
+			 , JOB_NAME = #{job_nm}
+			 , SRC_TABLE_ID = #{src_table_id}::integer
+			 , DES_TABLE_ID = #{des_table_id}::integer
+			 , DELIMITER = #{delimiter}
+			 , DES_FILE_PATH = #{des_file_path}
+			 , DES_FLAG_PATH = #{des_flag_path}
+			 , BASE_DATE = #{base_date}
+			 , JOB_SCHEDULE = #{job_schedule}
+			 , JOB_TYPE = #{job_type}
+			 , USE_YN = #{use_yn}
+		 WHERE JOB_ID = #{job_id}
+	</update>
+
+	<!-- /* DB 잡 삭제 */ -->
+	<delete id="deleteDbJob">
+		DELETE FROM mhdb.TB_DB_JOB_MST WHERE JOB_ID = #{jobId}::integer
+	</delete>
+
+</mapper>
+

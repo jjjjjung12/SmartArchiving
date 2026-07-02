@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.bulkjob.dao.sqream.ServiceInfoSqreamMapper">
+
+	<!-- mhdb 제외 메타는 항상 sqreamDataSource(네이티브 Sqream 또는 동일 DB PG JDBC)로만 조회 -->
+	<select id="selectEfbl" resultType="com.archiving.bulkjob.dto.ServiceInfoRowDto">
+		SELECT
+			application_group_id AS applicationGroupId,
+			service_id AS serviceId,
+			sel_gubun AS selGubun,
+			del_yn AS delYn
+		FROM EFBL.TB_SVC_INFO
+		WHERE 1=1
+		  AND application_group_id LIKE '%' || #{applicationGroupId} || '%'
+		ORDER BY application_group_id
+	</select>
+
+	<select id="selectDfsl" resultType="com.archiving.bulkjob.dto.ServiceInfoRowDto">
+		SELECT
+			application_group_id AS applicationGroupId,
+			service_id AS serviceId,
+			sel_gubun AS selGubun,
+			del_yn AS delYn
+		FROM DFSL.TB_SVC_INFO
+		WHERE 1=1
+		  AND application_group_id LIKE '%' || #{applicationGroupId} || '%'
+		ORDER BY application_group_id
+	</select>
+
+	<select id="countEfbl" resultType="int">
+		SELECT COUNT(1) FROM EFBL.TB_SVC_INFO
+		WHERE APPLICATION_GROUP_ID = #{applicationGroupId}
+		  AND SERVICE_ID = #{serviceId}
+	</select>
+
+	<select id="countDfsl" resultType="int">
+		SELECT COUNT(1) FROM DFSL.TB_SVC_INFO
+		WHERE APPLICATION_GROUP_ID = #{applicationGroupId}
+		  AND SERVICE_ID = #{serviceId}
+	</select>
+
+	<update id="updateEfbl">
+		UPDATE EFBL.TB_SVC_INFO
+		SET SEL_GUBUN = #{selGubun},
+			DEL_YN = #{delYn},
+			UP_DTIME = #{upDtime}
+		WHERE APPLICATION_GROUP_ID = #{applicationGroupId}
+		  AND SERVICE_ID = #{serviceId}
+	</update>
+
+	<update id="updateDfsl">
+		UPDATE DFSL.TB_SVC_INFO
+		SET SEL_GUBUN = #{selGubun},
+			DEL_YN = #{delYn},
+			UP_DTIME = #{upDtime}
+		WHERE APPLICATION_GROUP_ID = #{applicationGroupId}
+		  AND SERVICE_ID = #{serviceId}
+	</update>
+
+	<insert id="insertEfbl">
+		INSERT INTO EFBL.TB_SVC_INFO (APPLICATION_GROUP_ID, SERVICE_ID, SEL_GUBUN, DEL_YN, UP_DTIME)
+		VALUES (#{applicationGroupId}, #{serviceId}, #{selGubun}, #{delYn}, #{upDtime})
+	</insert>
+
+	<insert id="insertDfsl">
+		INSERT INTO DFSL.TB_SVC_INFO (APPLICATION_GROUP_ID, SERVICE_ID, SEL_GUBUN, DEL_YN, UP_DTIME)
+		VALUES (#{applicationGroupId}, #{serviceId}, #{selGubun}, #{delYn}, #{upDtime})
+	</insert>
+
+	<update id="truncateEfbl">
+		TRUNCATE TABLE EFBL.TB_SVC_INFO
+	</update>
+
+	<update id="truncateDfsl">
+		TRUNCATE TABLE DFSL.TB_SVC_INFO
+	</update>
+
+	<insert id="insertManyEfbl">
+		INSERT INTO EFBL.TB_SVC_INFO (APPLICATION_GROUP_ID, SERVICE_ID, SEL_GUBUN, DEL_YN, UP_DTIME)
+		VALUES
+		<foreach collection="rows" item="r" separator=",">
+			(#{r.applicationGroupId}, #{r.serviceId}, #{r.selGubun}, #{r.delYn}, #{upDtime})
+		</foreach>
+	</insert>
+
+	<insert id="insertManyDfsl">
+		INSERT INTO DFSL.TB_SVC_INFO (APPLICATION_GROUP_ID, SERVICE_ID, SEL_GUBUN, DEL_YN, UP_DTIME)
+		VALUES
+		<foreach collection="rows" item="r" separator=",">
+			(#{r.applicationGroupId}, #{r.serviceId}, #{r.selGubun}, #{r.delYn}, #{upDtime})
+		</foreach>
+	</insert>
+
+</mapper>

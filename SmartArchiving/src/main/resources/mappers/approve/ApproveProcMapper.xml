@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.approve.dao.mapper.ApproveProcMapper">
+
+	<!-- /* 결재라인의 결재여부(승인/반려/대기) 조회 */ -->
+	<select id="selectApprovalYn" resultType="string">
+		SELECT APPROVAL_YN
+		FROM mhdb.TB_APPROVAL_LINE
+		WHERE 1=1
+		  AND USER_CD = #{userCd}
+		  AND APPROVAL_REQ_ID = #{approvalReqId}
+		  AND APPROVAL_DIV_CD = #{approvalDivCd}
+		  AND APPROVAL_LINE_INDEX = #{lineIndex}
+	</select>
+
+	<!-- /* 결재라인 결재 처리(결재여부/사유/문서/일시 등 업데이트) */ -->
+	<update id="updateApprovalLine" parameterType="com.archiving.approve.dao.mapper.ApproveProcMapper$UpdateApprovalLineParam">
+		UPDATE mhdb.TB_APPROVAL_LINE
+		SET
+			APPROVAL_YN = #{approvalYn},
+			APPROVAL_REJECT_DOCU = #{approvalRejectDocu},
+			APPROVAL_REQ_DOCU = #{approvalReqDocu},
+			APPROVAL_DATE = #{approvalDate}
+		<if test='approvalLineUserId != null and approvalLineUserId != ""'>
+			,APPROVAL_LINE_USER_ID = #{approvalLineUserId}
+		</if>
+		<if test='approvalLineUserNm != null and approvalLineUserNm != ""'>
+			,APPROVAL_LINE_USER_NM = #{approvalLineUserNm}
+		</if>
+		WHERE 1=1
+		  AND USER_CD = #{userCd}
+		  AND APPROVAL_REQ_ID = #{approvalReqId}
+		  AND APPROVAL_DIV_CD = #{approvalDivCd}
+		  AND APPROVAL_LINE_USER_ID = #{whereApprovalLineUserId}
+		  AND APPROVAL_LINE_INDEX = #{approvalLineIndex}
+	</update>
+
+	<!-- /* 결재라인 적용대상(BEFORE_APPLY_YN) 플래그 설정 */ -->
+	<update id="setBeforeApplyYn">
+		UPDATE mhdb.TB_APPROVAL_LINE
+		SET BEFORE_APPLY_YN = 'Y'
+		WHERE 1=1
+		  AND APPROVAL_REQ_ID = #{approvalReqId}
+		  AND APPROVAL_LINE_INDEX = #{lineIndex}
+	</update>
+
+	<!-- /* 결재요청 결재일시 및 권한(auth) 업데이트 */ -->
+	<update id="updateApprovalReqApprovalDateAndAuth" parameterType="com.archiving.approve.dao.mapper.ApproveProcMapper$UpdateApprovalReqParam">
+		UPDATE mhdb.TB_APPROVAL_REQ
+		SET APPROVAL_DATE = #{approvalDate}
+		<if test='auth != null and auth != ""'>
+			,AUTH = #{auth}
+		</if>
+		WHERE 1=1
+		  AND USER_CD = #{userCd}
+		  AND APPROVAL_DIV_CD = #{approvalDivCd}
+		  AND APPROVAL_REQ_ID = #{approvalReqId}
+	</update>
+
+	<!-- /* 결재라인 결재자명 업데이트 */ -->
+	<update id="updateApprovalLineUserNm">
+		UPDATE mhdb.TB_APPROVAL_LINE
+		SET APPROVAL_LINE_USER_NM = #{userNm}
+		WHERE 1=1
+		  AND APPROVAL_REQ_ID = #{approvalReqId}
+		  AND APPROVAL_LINE_INDEX = #{lineIndex}
+	</update>
+
+	<!-- /* 사용자 정보 존재 여부 카운트 */ -->
+	<select id="countUserInfo" resultType="int">
+		SELECT COUNT(1)
+		FROM mhdb.TB_USER_INFO
+		WHERE USER_CD = #{userCd}
+	</select>
+
+	<!-- /* 사용자 정보 신규 등록 */ -->
+	<insert id="insertUserInfo" parameterType="com.archiving.approve.dao.mapper.ApproveProcMapper$InsertUserInfoParam">
+		INSERT INTO mhdb.TB_USER_INFO (USER_CD, USER_NM, PASSWORD, APPROWAITCNT, USE_YN, LOGIN_DATE, BRC, BRNM, IP_ADDRESS, EXPIRE_DATE)
+		VALUES (#{userCd}, #{userNm}, #{password}, 0, 'Y', #{loginDate}, #{brc}, #{brnm}, #{ipAddress}, #{expireDate})
+	</insert>
+
+	<!-- /* 사용자 로그인/조직/만료 등 정보 갱신 */ -->
+	<update id="updateUserInfoLogin" parameterType="com.archiving.approve.dao.mapper.ApproveProcMapper$UpdateUserInfoLoginParam">
+		UPDATE mhdb.TB_USER_INFO
+		SET LOGIN_DATE = #{loginDate},
+			BRC = #{brc},
+			BRNM = #{brnm},
+			IP_ADDRESS = #{ipAddress},
+			EXPIRE_DATE = #{expireDate}
+		WHERE USER_CD = #{userCd}
+	</update>
+
+	<!-- /* 사용자 멤버(그룹) 정보 삭제 */ -->
+	<delete id="deleteUserMember">
+		DELETE FROM mhdb.TB_USER_MEMBER
+		WHERE USER_ID = (SELECT USER_ID FROM mhdb.TB_USER_INFO WHERE USER_CD = #{userCd} LIMIT 1)
+	</delete>
+
+	<!-- /* 사용자 멤버(그룹) 정보 추가 */ -->
+	<insert id="insertUserMember">
+		INSERT INTO mhdb.TB_USER_MEMBER (USER_ID, USER_GRP_ID)
+		VALUES ((SELECT USER_ID FROM mhdb.TB_USER_INFO WHERE USER_CD=#{userCd} LIMIT 1), #{userGrpId}::integer)
+	</insert>
+
+	<!-- /* 마스킹 처리 이력 등록 */ -->
+	<insert id="insertMaskHistory" parameterType="com.archiving.approve.dao.mapper.ApproveProcMapper$InsertMaskHistoryParam">
+		INSERT INTO mhdb.TB_MASK_HISTORY (USER_CD, REQ_DATE, APPROVAL_REQ_ID, USER_NM, PROGRAM_ID, PROGRAM_NM, PROC_DATE)
+		VALUES (#{userCd}, #{reqDate}, #{approvalReqId}, #{userNm}, #{programId}, #{programNm}, #{procDate})
+	</insert>
+
+	<!-- /* 벌크잡 요청 적용여부(APPLY_YN) 일괄 업데이트 */ -->
+	<update id="updateBulkJobApplyYn">
+		UPDATE mhdb.TB_BULK_JOB_REQ
+		SET APPLY_YN = 'Y'
+		WHERE APPROVAL_REQ_ID = #{approvalReqId}
+	</update>
+
+</mapper>
+

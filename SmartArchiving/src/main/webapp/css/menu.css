@@ -1,0 +1,26 @@
+body {
+    margin: 50px;
+}
+.menu {
+    list-style-type: none;
+    padding: 20px;
+    margin: 0;
+    background-color: #f0f0f0;
+}
+
+.menu li {
+    display: inline;
+    margin-right: 10px;
+}
+
+.menu a {
+    text-decoration: none;
+    color: black;
+    padding: 5px 10px;
+}
+
+.menu a.active {
+    color: white;
+    background-color: blue;
+    border-radius: 5px;
+}

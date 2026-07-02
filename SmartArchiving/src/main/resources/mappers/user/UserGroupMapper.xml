@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.user.dao.mapper.UserGroupMapper">
+
+	<!-- /* 사용자 그룹 목록 조회(그룹ID/그룹명 조건) */ -->
+	<select id="selectGroupsGbA" resultType="com.archiving.user.dto.UserGroupRowDto">
+		SELECT
+			CAST(NULL AS VARCHAR) AS userId,
+			CAST(NULL AS VARCHAR) AS userNm,
+			UG.USER_GRP_ID AS userGrpId,
+			UG.USER_GRP_NM AS userGrpNm,
+			UG.DESCRIPTION AS description,
+			UG.USE_YN AS useYn
+		FROM mhdb.TB_USER_GROUP UG
+		WHERE 1 = 1
+		<if test='userGroupId != null and userGroupId != "" and userGroupId != "*"'>
+			AND UG.USER_GRP_ID = #{userGroupId}
+		</if>
+		<if test='userGroupNm != null and userGroupNm != "" and userGroupNm != "*"'>
+			AND UG.USER_GRP_NM ILIKE '%' || #{userGroupNm} || '%'
+		</if>
+		ORDER BY UG.USER_GRP_ID, UG.USER_GRP_NM
+	</select>
+
+	<!-- /* 그룹에 아직 배정되지 않은 사용자 목록 조회 */ -->
+	<select id="selectUsersAvailableGbB" resultType="com.archiving.user.dto.UserGroupRowDto">
+		SELECT
+			I.USER_ID AS userId,
+			I.USER_NM AS userNm,
+			CAST(NULL AS VARCHAR) AS userGrpId,
+			CAST(NULL AS VARCHAR) AS userGrpNm,
+			CAST(NULL AS VARCHAR) AS description,
+			CAST(NULL AS VARCHAR) AS useYn
+		FROM mhdb.TB_USER_INFO I
+		LEFT OUTER JOIN mhdb.TB_USER_MEMBER M ON I.USER_ID = M.USER_ID
+		WHERE I.USE_YN != 'D'
+		  AND M.USER_GRP_ID IS NULL
+		ORDER BY I.USER_NM
+	</select>
+
+	<!-- /* 특정 그룹에 소속된 사용자 목록 조회 */ -->
+	<select id="selectMembersOfGroupGbC" resultType="com.archiving.user.dto.UserGroupRowDto">
+		SELECT
+			I.USER_ID AS userId,
+			I.USER_NM AS userNm,
+			CAST(NULL AS VARCHAR) AS userGrpId,
+			CAST(NULL AS VARCHAR) AS userGrpNm,
+			CAST(NULL AS VARCHAR) AS description,
+			CAST(NULL AS VARCHAR) AS useYn
+		FROM mhdb.TB_USER_INFO I
+		INNER JOIN mhdb.TB_USER_MEMBER M ON I.USER_ID = M.USER_ID
+		WHERE I.USE_YN != 'D'
+		<if test="userGroupId != null and userGroupId != ''">
+			AND M.USER_GRP_ID = #{userGroupId}::integer
+		</if>
+		ORDER BY I.USER_NM
+	</select>
+
+	<!-- /* 그룹ID 기준으로 멤버 전체 삭제 */ -->
+	<delete id="deleteMembersByGroupId">
+		DELETE FROM mhdb.TB_USER_MEMBER
+		WHERE USER_GRP_ID = #{userGrpId}::integer
+	</delete>
+
+	<!-- /* 사용자-그룹 멤버십 추가 */ -->
+	<insert id="insertMember">
+		INSERT INTO mhdb.TB_USER_MEMBER (USER_ID, USER_GRP_ID)
+		VALUES (#{userId}::integer, #{userGrpId}::integer)
+	</insert>
+
+	<!-- /* 사용자 그룹 신규 등록 */ -->
+	<insert id="insertUserGroup">
+		INSERT INTO mhdb.TB_USER_GROUP (USER_GRP_ID, USER_GRP_NM)
+		VALUES (#{userGrpId}::integer, #{userGrpNm})
+	</insert>
+
+	<!-- /* 사용자 그룹 정보 수정(명/설명/사용여부) */ -->
+	<update id="updateUserGroup">
+		UPDATE mhdb.TB_USER_GROUP
+		SET USER_GRP_NM = #{userGrpNm},
+			DESCRIPTION = #{description},
+			USE_YN = #{useYn}
+		WHERE USER_GRP_ID = #{userGrpId}::integer
+	</update>
+
+</mapper>

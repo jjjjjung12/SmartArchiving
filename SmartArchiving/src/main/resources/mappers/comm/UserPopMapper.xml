@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.comm.dao.mapper.UserPopMapper">
+	<!-- /* 사용자 선택 팝업용 사용자 목록 조회(사용자코드 조건) */ -->
+	<select id="selectUserList" resultType="com.archiving.comm.dao.mapper.UserPopMapper$UserRow">
+		SELECT
+			USER_CD AS userCd,
+			USER_NM AS userNm
+		FROM mhdb.TB_USER_INFO
+		WHERE USE_YN = 'Y'
+		<if test='userCd != null and userCd != ""'>
+			AND USER_CD = #{userCd}
+		</if>
+		ORDER BY USER_ID
+	</select>
+</mapper>
+

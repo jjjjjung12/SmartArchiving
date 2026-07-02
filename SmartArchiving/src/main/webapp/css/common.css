@@ -1,0 +1,412 @@
+@charset "utf-8";
+html { height: 100%; background: #fff; }
+body { height: 100%; color: #777; font-style: normal; font-size: 16px; letter-spacing: -0.5px; background: transparent; 
+-webkit-text-size-adjust: none; -moz-osx-font-smoothing: grayscale; -webkit-font-smoothing: antialiased; box-sizing: border-box; font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', 'Pretendard', 'Nanum Square', 'NanumGothic', sans-serif;}
+label, input[type="button"], input[type="submit"] { cursor: pointer; letter-spacing: -0.5px; }
+a { color: #777; }
+a, button { transition: .2s; }
+a i, button i { transition: .1s; }
+
+* { box-sizing: border-box; }
+
+
+/* align */
+.tal { text-align: left; }
+.tac { text-align: center; }
+.tar { text-align: right; }
+
+/* font color */
+.mcolor { color: #1967b4; }
+.scolor { color: #31adb6; }
+.pcolor { color: #ff9f37; }
+.white { color: #fff; }
+.grey { color: #777; }
+.lgrey { color: #aaa; }
+.maxlgrey { color: #bbb; }
+.dgrey { color: #555; }
+.black { color: #333; }
+.green { color: #14a73c; }
+
+/* background color */
+.bg_mcolor { background: #1967b4; }
+.bg_scolor { background: #31adb6; }
+.bg_white { background: #fff; }
+.bg_grey { background: #777; }
+.bg_lgrey { background: #aaa; }
+.bg_dgrey { background: #555; }
+.bg_black { background: #333; }
+.bg_blue { background: #EDF5FF }
+
+/* padding */
+.pd8 { padding: 8px; }
+.pd10 { padding: 10px; }
+.pd12 { padding: 12px; }
+.pd16 { padding: 16px; }
+.pd20 { padding: 20px; }
+.pd24 { padding: 24px; }
+.pd30 { padding: 30px; }
+.pd32 { padding: 32px; }
+
+.pt4 { padding-top: 4px; }
+.pt8 { padding-top: 8px; }
+.pt10 { padding-top: 10px; }
+.pt12 { padding-top: 12px; }
+.pt16 { padding-top: 16px; }
+.pt20 { padding-top: 20px; }
+.pt22 { padding-top: 22px; }
+.pt24 { padding-top: 24px; }
+.pt30 { padding-top: 30px; }
+.pt32 { padding-top: 32px; }
+.pt36 { padding-top: 36px; }
+.pt40 { padding-top: 40px; }
+.pt50 { padding-top: 50px; }
+.pt60 { padding-top: 60px; }
+
+.pr4 { padding-right: 4px; }
+.pr8 { padding-right: 8px; }
+.pr10 { padding-right: 10px; }
+.pr12 { padding-right: 12px; }
+.pr16 { padding-right: 16px; }
+.pr20 { padding-right: 20px; }
+.pr22 { padding-right: 22px; }
+.pr24 { padding-right: 24px; }
+.pr30 { padding-right: 30px; }
+.pr32 { padding-right: 32px; }
+.pr36 { padding-right: 36px; }
+.pr40 { padding-right: 40px; }
+.pr50 { padding-right: 50px; }
+.pr60 { padding-right: 60px; }
+
+.pl4 { padding-left: 4px; }
+.pl8 { padding-left: 8px; }
+.pl10 { padding-left: 10px; }
+.pl12 { padding-left: 12px; }
+.pl16 { padding-left: 16px; }
+.pl20 { padding-left: 20px; }
+.pl22 { padding-left: 22px; }
+.pl24 { padding-left: 24px; }
+.pl30 { padding-left: 30px; }
+.pl32 { padding-left: 32px; }
+.pl36 { padding-left: 36px; }
+.pl40 { padding-left: 40px; }
+.pl50 { padding-left: 50px; }
+.pl60 { padding-left: 60px; }
+
+.pb4 { padding-bottom: 4px; }
+.pb8 { padding-bottom: 8px; }
+.pb10 { padding-bottom: 10px; }
+.pb12 { padding-bottom: 12px; }
+.pb16 { padding-bottom: 16px; }
+.pb20 { padding-bottom: 20px; }
+.pb22 { padding-bottom: 22px; }
+.pb24 { padding-bottom: 24px; }
+.pb30 { padding-bottom: 30px; }
+.pb32 { padding-bottom: 32px; }
+.pb36 { padding-bottom: 36px; }
+.pb40 { padding-bottom: 40px; }
+.pb50 { padding-bottom: 50px; }
+.pb60 { padding-bottom: 60px; }
+
+
+/* margin */
+.mt2 { margin-top: 2px; }
+.mt4 { margin-top: 4px; }
+.mt6 { margin-top: 6px; }
+.mt8 { margin-top: 8px; }
+.mt10 { margin-top: 10px; }
+.mt12 { margin-top: 12px; }
+.mt14 { margin-top: 14px; }
+.mt16 { margin-top: 16px; }
+.mt20 { margin-top: 20px; }
+.mt22 { margin-top: 22px; }
+.mt24 { margin-top: 24px; }
+.mt30 { margin-top: 30px; }
+.mt32 { margin-top: 32px; }
+.mt36 { margin-top: 36px; }
+.mt40 { margin-top: 40px; }
+.mt50 { margin-top: 50px; }
+.mt60 { margin-top: 60px; }
+
+.mr4 { margin-right: 4px; }
+.mr8 { margin-right: 8px; }
+.mr10 { margin-right: 10px; }
+.mr12 { margin-right: 12px; }
+.mr16 { margin-right: 16px; }
+.mr20 { margin-right: 20px; }
+.mr22 { margin-right: 22px; }
+.mr24 { margin-right: 24px; }
+.mr30 { margin-right: 30px; }
+.mr32 { margin-right: 32px; }
+.mr36 { margin-right: 36px; }
+.mr40 { margin-right: 40px; }
+.mr50 { margin-right: 50px; }
+.mr60 { margin-right: 60px; }
+
+.ml2 { margin-left: 2px; }
+.ml4 { margin-left: 4px; }
+.ml8 { margin-left: 8px; }
+.ml10 { margin-left: 10px; }
+.ml12 { margin-left: 12px; }
+.ml16 { margin-left: 16px; }
+.ml20 { margin-left: 20px; }
+.ml22 { margin-left: 22px; }
+.ml24 { margin-left: 24px; }
+.ml30 { margin-left: 30px; }
+.ml32 { margin-left: 32px; }
+.ml36 { margin-left: 36px; }
+.ml40 { margin-left: 40px; }
+.ml50 { margin-left: 50px; }
+.ml60 { margin-left: 60px; }
+
+.mb4 { margin-bottom: 4px; }
+.mb8 { margin-bottom: 8px; }
+.mb10 { margin-bottom: 10px; }
+.mb12 { margin-bottom: 12px; }
+.mb16 { margin-bottom: 16px; }
+.mb20 { margin-bottom: 20px; }
+.mb22 { margin-bottom: 22px; }
+.mb24 { margin-bottom: 24px; }
+.mb30 { margin-bottom: 30px; }
+.mb32 { margin-bottom: 32px; }
+.mb36 { margin-bottom: 36px; }
+.mb40 { margin-bottom: 40px; }
+.mb50 { margin-bottom: 50px; }
+.mb60 { margin-bottom: 60px; }
+
+
+/* width */
+.w5p { width: 5%; }
+.w6p { width: 6%; }
+.w8p { width: 8%; }
+.w10p { width: 10%; }
+.w11p { width: 11%; }
+.w12p { width: 12%; }
+.w13p { width: 13%; }
+.w14p { width: 14%; }
+.w15p { width: 15%; }
+.w16p { width: 16%; }
+.w17p { width: 17%; }
+.w18p { width: 18%; }
+.w19p { width: 19%; }
+.w20p { width: 20%; }
+.w22p { width: 22%; }
+.w24p { width: 24%; }
+.w26p { width: 26%; }
+.w28p { width: 28%; }
+.w30p { width: 30%; }
+.w32p { width: 32%; }
+.w34p { width: 34%; }
+.w36p { width: 36%; }
+.w38p { width: 38%; }
+.w40p { width: 40%; }
+.w42p { width: 42%; }
+.w44p { width: 44%; }
+.w46p { width: 46%; }
+.w48p { width: 48%; }
+.w50p { width: 50%; }
+.w52p { width: 52%; }
+.w54p { width: 54%; }
+.w56p { width: 56%; }
+.w58p { width: 58%; }
+.w60p { width: 60%; }
+.w62p { width: 62%; }
+.w64p { width: 64%; }
+.w66p { width: 66%; }
+.w68p { width: 68%; }
+.w70p { width: 70%; }
+.w72p { width: 72%; }
+.w74p { width: 74%; }
+.w76p { width: 76%; }
+.w78p { width: 78%; }
+.w80p { width: 80%; }
+.w82p { width: 82%; }
+.w84p { width: 84%; }
+.w86p { width: 86%; }
+.w88p { width: 88%; }
+.w90p { width: 90%; }
+.w92p { width: 92%; }
+.w94p { width: 94%; }
+.w96p { width: 96%; }
+.w98p { width: 98%; }
+.w100p { width: 100%; }
+
+.wd80 { width: 80px; }
+
+/* height */
+.h100p { height: 100%; }
+
+/* float */
+.floatl { float: left; }
+.floatr { float: right; }
+
+/* display */
+.disnone { display: none; }
+.disblock { display: block; }
+.disinline { display: inline; }
+.disinblock { display: inline-block; }
+.disflex { display: flex; gap: 8px; flex-wrap: wrap; }
+.disflex.gap20 { gap: 20px; }
+.disgrid { display: grid; }
+.align_center { align-items: center; }
+.aligns_center { align-self: center; }
+.justify_center { justify-content: center; }
+
+/* position */
+.relative { position: relative; }
+.absolute { position: absolute; }
+
+/* vertical-align */
+.vat { vertical-align: top; }
+.vam { vertical-align: middle; }
+.vab { vertical-align: bottom; }
+
+/* font size */
+.fz12 { font-size: 12px; }
+.fz14 { font-size: 14px; }
+.fz16 { font-size: 16px; }
+.fz18 { font-size: 18px; }
+.fz20 { font-size: 20px; }
+.fz22 { font-size: 22px; }
+.fz24 { font-size: 24px; }
+.fz26 { font-size: 26px; }
+.fz30 { font-size: 30px; }
+.fz50 { font-size: 50px; }
+
+/* font weight */
+.fw300 { font-weight: 300; }
+.fw400 { font-weight: 400; }
+.fw600 { font-weight: 600; }
+.fw700 { font-weight: 700; }
+.fw800 { font-weight: 800; }
+
+/* text-docoration */
+.tdunder { text-decoration: underline; }
+.tdline { text-decoration: line-through; }
+
+/* etc */
+.pointer { cursor: pointer; }
+.noresize { resize: none; }
+.overh { overflow: hidden; }
+.clear { clear: both; }
+
+
+/* input */
+input { height: 36px; vertical-align: middle; line-height: 36px; padding: 0 8px; background: #fff; font-size: 15px; border-radius: 2px; border: 1px solid #91a2b3; box-sizing: border-box; }
+select { height: 36px; vertical-align: middle; line-height: 36px; padding: 0 30px 0 10px; font-size: 16px; border-radius: 2px; border: 1px solid #91a2b3; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-color: #fff; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7' fill='none'%3E%3Cpath d='M1 1.5L5 5.5L9 1.5' stroke='%231967b4' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 10px 7px; }
+.select_box select { background-image: none; }
+textarea { display: inline; vertical-align: top; line-height: 20px; padding: 10px 8px; font-size: 16px; border: 1px solid #91a2b3; }
+input[type="checkbox"],
+input[type="radio"] { border: 0; clip: rect(0 0 0 0); height: 0; margin: -1px; overflow: hidden; padding: 0; position: absolute; width: 0; }
+input[type="checkbox"] + label,
+input[type="radio"] + label { position: relative; padding-left: 18px; user-select: none; }
+input[type="checkbox"] + label::before,
+input[type="radio"] + label::before { box-sizing: content-box; content: ''; color: #1967b4; background: #fff; position: absolute; top: 50%; left: 0; width: 16px; height: 16px; margin-top: -9px; border: 1px solid #ddd; border-radius: 2px; text-align: center; transition: all 0.2s ease; }
+input[type="checkbox"] + label::after,
+input[type="radio"] + label::after { box-sizing: content-box; content: ''; background-color: #1967b4; position: absolute; top: 50%; left: 4px; width: 10px; height: 10px; margin-top: -5px; transform: scale(0); transform-origin: 50%; transition: transform 100ms ease-out; }
+input[type="checkbox"]:focus + label::before,
+input[type="radio"]:focus + label::before,
+input[type="checkbox"]:hover + label::before,
+input[type="radio"]:hover + label::before { background-color: #f6f6fc; }
+input[type="checkbox"]:active + label::before,
+input[type="radio"]:active + label::before { transition-duration: 0s; }
+
+input[type="checkbox"] + label::after { background-color: transparent; top: 50%; left: 4px; width: 8px; height: 3px; margin-top: -4px; border-style: solid; border-color: #ffffff; border-width: 0 0 3px 3px; border-image: none; transform: rotate(-45deg) scale(0); }
+input[type="checkbox"]:checked + label::before { background: #1967b4; border-color: #1967b4; }
+input[type="checkbox"]:checked + label::after { content: ''; transform: rotate(-45deg) scale(1); transition: transform 100ms ease-out; }
+
+input[type="radio"] + label::before,
+input[type="radio"] + label::after { border-radius: 50%; }
+input[type="radio"]:checked + label::before { background-color: #fff; border-color: #1967b4; }
+input[type="radio"]:checked + label::after { transform: scale(1); }
+
+input[type="checkbox"]:disabled + label::before,
+input[type="radio"]:disabled + label::before,
+input[type="checkbox"]:disabled:checked + label::before,
+input[type="radio"]:disabled:checked + label::before { background: #f1f1f1; border-color: #ddd; }
+input[type="checkbox"]:disabled:checked + label::after { border-color: #aaa; }
+input[type="radio"]:disabled:checked + label::after { background-color: #aaa; }
+input[type="checkbox"]:disabled:focus + label::before,
+input[type="radio"]:disabled:focus + label::before,
+input[type="checkbox"]:disabled:hover + label::before,
+input[type="radio"]:disabled:hover + label::before { background-color: #f1f1f1; } 
+
+input[type="checkbox"] + label > span,
+input[type="radio"] + label > span { margin-left: 8px; }
+
+/* select */
+.select_box { position: relative; width: fit-content; display: inline-block; }
+/* .select_box:after { content: '\f0dd'; position: absolute; right: 16px; top: 50%; transform: translateY(-58%); color: #1967b4; font-size: 12px; font-family: 'FontAwesome'; } */ 
+
+
+/* ------ 체크박스, 라디오 버튼 코드 - 복사해서 사용하세요. : S ------ */
+/* checkbox - default */
+/* <input type="checkbox" id="chk1" name="chk1">
+<label for="chk1"><span>내용</span>checked</label> */
+
+/* checkbox - checked */
+/* <input type="checkbox" id="chk1" name="chk1" checked="checked">
+<label for="chk1"><span>내용</span>checked</label> */
+
+/* checkbox - disabled */
+/* <input type="checkbox" id="chk1" name="chk1" disabled="disabled">
+<label for="chk1"><span>내용</span>checked</label> */
+
+/* checkbox - checked, disabled */
+/* <input type="checkbox" id="chk1" name="chk1" checked="checked" disabled="disabled">
+<label for="chk1"><span>내용</span>checked</label> */
+
+/* radio - default */
+/* <input type="radio" id="radio1" name="radio">
+<label for="radio1"><span>내용</span>checked</label> */
+
+/* radio - checked */
+/* <input type="radio" id="radio1" name="radio" checked="checked">
+<label for="radio1"><span>내용</span>checked</label> */
+
+/* radio - disabled */
+/* <input type="radio" id="radio1" name="radio" disabled="disabled">
+<label for="radio1"><span>내용</span>checked</label> */
+
+/* radio - checked, disabled */
+/* <input type="radio" id="radio1" name="radio" checked="checked" disabled="disabled">
+<label for="radio1"><span>내용</span>checked</label> */
+/* ------ 체크박스, 라디오 버튼 코드 - 복사해서 사용하세요. : E ------ */
+
+
+
+
+/* input file */
+input[type="file"] { line-height: 34px; background: #f1f1f1; }
+.file_input { display: inline-block; }
+.file_input label { float: left; position: relative; display: inline-block; height: 36px; margin-left: 6px; padding: 0 13px; line-height: 36px; color: #777; border: 1px solid #ddd; background: #f6f6f6; text-align: center; vertical-align: middle; border-radius: 2px; overflow: hidden; }
+.file_input label:hover { background: #fff; transition: .2s; }
+.file_input label input { position: absolute; width: 0; height: 0; overflow: hidden; opacity: 0; }
+.file_input input[type="text"] { float: left; display: inline-block; height: 36px; line-height: 36px; vertical-align: middle; font-size: 14px; background: #fff; letter-spacing: 0.5px; }
+
+/* ------ input file 코드 - 복사해서 사용하세요. : S ------ */
+/* 텍스트 style */
+/*	<div class="file_input">
+		<input type="text" readonly="readonly" id="file_route">
+		<label title="파일업로드">
+			<input type="file" name="" id="" onchange="javascript:document.getElementById('file_route').value = this.value.split('\\')[this.value.split('\\').length-1]">
+			<span>파일 업로드</span>
+		</label>
+	</div> */
+/* 	아이콘 style */
+/*	<div class="file_input">
+		<input type="text" readonly="readonly" id="file_route">
+		<label title="파일업로드">
+			<input type="file" name="" id="" onchange="javascript:document.getElementById('file_route').value = this.value.split('\\')[this.value.split('\\').length-1]">
+			<i class="fas fa-file-upload"></i>
+		</label>
+	</div> */
+/* ------ input file 코드 - 복사해서 사용하세요. : E ------ */
+
+/* input readonly */
+input[readonly="readonly"],
+select[readonly="readonly"] { cursor: default; background-color: #f6f6f6; border-color: #ccc; }
+
+/* input placeholder */
+input::-webkit-input-placeholder { color: #777; }
+input:-ms-input-placeholder { color: #777; }
+input:-moz-placeholder { color: #777; }

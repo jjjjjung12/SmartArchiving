@@ -1,0 +1,166 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.util.dao.mapper.UtilLegacyMapper">
+
+	<!-- /* Postgres 에러 코드(detailCd) 메시지 조회 */ -->
+	<select id="selectPostgresErrorMessage" resultType="string">
+		SELECT DETAIL_NM
+		FROM mhdb.TB_CODE_DETAIL
+		WHERE GROUP_CD = 'POSTGRESQL'
+		  AND DETAIL_CD = #{detailCd}
+	</select>
+
+	<!-- /* 스케줄 초기값 조회(잡코드 기준) */ -->
+	<select id="selectScheduleIniByJobCd" resultType="com.archiving.util.dto.ScheduleIniRowDto">
+		SELECT
+			S.JOB_ID AS jobId,
+			S.DEST_SERVER AS destServer,
+			S.JOB_SCHEDULE AS jobSchedule,
+			S.SRC_IP AS srcIp,
+			S.SRC_PORT AS srcPort,
+			C1.DETAIL_NM AS srcDbms,
+			S.SRC_DBMS_CD AS srcDbmsCd,
+			S.SRC_DB AS srcDb,
+			S.SRC_USER AS srcUser,
+			S.SRC_PASSWD AS srcPasswd,
+			S.SRC_SQL AS srcSql,
+			S.USE_YN AS useYn,
+			S.DEST_IP AS destIp,
+			S.DEST_PORT AS destPort,
+			C2.DETAIL_NM AS destDbms,
+			S.DEST_DBMS_CD AS destDbmsCd,
+			S.DEST_DB AS destDb,
+			S.DEST_USER AS destUser,
+			S.DEST_PASSWD AS destPasswd,
+			S.JOB_METHOD_CD AS jobMethodCd,
+			S.DEST_TABLE AS destTable,
+			S.SAVE_PREQ_CD AS savePreqCd,
+			S.SAVE_PREQ AS savePreq,
+			S.JOB_TYPE_CD AS jobTypeCd,
+			S.JOB_CLASS AS jobClass,
+			S.JOB_PATH AS jobPath,
+			S.SELECT_YN AS jobSelected
+		FROM SCHEDULE S, CODEDETAIL C1, CODEDETAIL C2
+		WHERE S.SRC_DBMS_CD = C1.DETAIL_CD
+		  AND 'DBMS_CD' = C1.GROUP_CD
+		  AND S.SRC_DBMS_CD = C2.DETAIL_CD
+		  AND 'DBMS_CD' = C2.GROUP_CD
+		  AND LOWER(S.JOB_CD) = LOWER(#{jobCd})
+	</select>
+
+	<!-- /* 크론 등록 대상 스케줄 잡 목록 조회 */ -->
+	<select id="selectScheduleJobsForCron" resultType="com.archiving.util.dto.ScheduleJobListRowDto">
+		SELECT
+			JOB_CD AS jobCd,
+			JOB_NM AS jobNm,
+			JOB_SCHEDULE AS jobSchedule
+		FROM SCHEDULE
+		WHERE USE_YN = 'Y'
+		  AND JOB_SCHEDULE IS NOT NULL
+	</select>
+
+	<!-- /* 스케줄 잡 컬럼 목록 조회(잡코드 기준) */ -->
+	<select id="selectScheduleColsByJobCd" resultType="com.archiving.util.dto.ScheduleColRowDto">
+		SELECT
+			C.COL_SEQ AS colSeq,
+			C.COL_CD AS colCd,
+			C.COL_NM AS colNm,
+			C.COL_TYPE_CD AS colTypeCd,
+			C.COL_LEN AS colLen,
+			C.COL_DATE_YN AS colDateYn,
+			C.COL_ENC_YN AS colEncYn
+		FROM SCHEDULE_COL C
+		INNER JOIN SCHEDULE S ON C.JOB_ID = S.JOB_ID
+		WHERE LOWER(S.JOB_CD) = LOWER(#{jobCd})
+		ORDER BY C.COL_SEQ
+	</select>
+
+	<!-- /* URL 일부로 메뉴명 조회 */ -->
+	<select id="selectMenuNmByUrlLike" resultType="string">
+		SELECT MENU_NM
+		FROM mhdb.TB_MENU
+		WHERE MENU_URL ILIKE '%' || #{programId} || '%'
+		LIMIT 1
+	</select>
+
+	<!-- /* 사용자 로그 등록 */ -->
+	<insert id="insertUserLog">
+		INSERT INTO mhdb.TB_USER_LOGS (
+			GROUP_ID, USER_ID, USER_CD, PROGRAM_WHERE,
+			USER_NAME, IP_ADDRESS, PROGRAM_ID, PROGRAM_NM, METHOD,
+			ACTION_DATE, ACTION_TIME
+		) VALUES (
+			#{groupId},
+			#{userId},
+			#{userCd},
+			#{programWhere},
+			#{userName},
+			#{addr},
+			#{programId},
+			#{programNm},
+			#{method},
+			current_date,
+			current_timestamp
+		)
+	</insert>
+
+	<!-- /* 인사 라인(팀장급) 결재선 후보 조회 */ -->
+	<select id="selectInsaTeamLeadLine" resultType="com.archiving.util.dto.InsaOptionRowDto">
+		SELECT
+			ENO AS eno,
+			NAME AS name,
+			OFT AS oft,
+			PZCNM AS pzcnm,
+			BRNM AS brnm
+		FROM mhdb.TB_INSA_MST
+		WHERE BRC = (SELECT BRC FROM mhdb.TB_INSA_MST WHERE ENO = #{userCd})
+		  AND MOBR_BRC = (SELECT MOBR_BRC FROM mhdb.TB_INSA_MST WHERE ENO = #{userCd})
+		  AND MOBR_BRC2 = (SELECT MOBR_BRC2 FROM mhdb.TB_INSA_MST WHERE ENO = #{userCd})
+		  AND MOBR_BRC3 = (SELECT MOBR_BRC3 FROM mhdb.TB_INSA_MST WHERE ENO = #{userCd})
+		  AND OFT_C IN ('800', '111', '113')
+		ORDER BY OFT_C DESC
+	</select>
+
+	<!-- /* 인사 1차 결재선 후보 조회 */ -->
+	<select id="selectInsaFirstApprovalLine" resultType="com.archiving.util.dto.InsaOptionRowDto">
+		SELECT
+			ENO AS eno,
+			NAME AS name,
+			OFT AS oft,
+			PZCNM AS pzcnm,
+			BRNM AS brnm
+		FROM mhdb.TB_INSA_MST
+		WHERE BRC = (SELECT BRC FROM mhdb.TB_INSA_MST WHERE ENO = #{userCd})
+		  AND MOBR_BRC = (SELECT MOBR_BRC FROM mhdb.TB_INSA_MST WHERE ENO = #{userCd})
+		  AND MOBR_BRC2 = (SELECT MOBR_BRC2 FROM mhdb.TB_INSA_MST WHERE ENO = #{userCd})
+		  AND MOBR_BRC3 = (SELECT MOBR_BRC3 FROM mhdb.TB_INSA_MST WHERE ENO = #{userCd})
+		  AND (PZCC = '22' OR OFT_C = '201')
+		ORDER BY OFT_C DESC
+	</select>
+
+	<!-- /* 현재 시각 -1일 문자열 조회 */ -->
+	<select id="selectNowMinusOneDay" resultType="string">
+		SELECT CAST((CURRENT_TIMESTAMP + INTERVAL '-1 day') AS TEXT)
+	</select>
+
+	<!-- /* 인사 2차 결재선 후보 조회 */ -->
+	<select id="selectInsaSecondApprovalLine" resultType="com.archiving.util.dto.InsaOptionRowDto">
+		SELECT
+			ENO AS eno,
+			NAME AS name,
+			OFT AS oft,
+			PZCNM AS pzcnm,
+			BRNM AS brnm
+		FROM mhdb.TB_INSA_MST
+		WHERE BRC = (SELECT BRC FROM mhdb.TB_INSA_MST WHERE ENO = #{userCd})
+		  AND MOBR_BRC = (SELECT MOBR_BRC FROM mhdb.TB_INSA_MST WHERE ENO = #{userCd})
+		  AND MOBR_BRC2 = (SELECT MOBR_BRC2 FROM mhdb.TB_INSA_MST WHERE ENO = #{userCd})
+		  AND MOBR_BRC3 = (SELECT MOBR_BRC3 FROM mhdb.TB_INSA_MST WHERE ENO = #{userCd})
+		  AND PZCC = '21'
+		ORDER BY OFT_C DESC
+	</select>
+
+</mapper>

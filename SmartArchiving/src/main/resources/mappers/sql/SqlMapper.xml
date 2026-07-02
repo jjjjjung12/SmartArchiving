@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.sql.dao.mapper.SqlMapper">
+
+	<!-- /* 스케줄 잡 목록 조회(잡ID/잡명 조건) */ -->
+	<select id="selectScheduleList" resultType="map">
+		SELECT
+			  S.JOB_ID
+			, S.JOB_CD
+			, S.JOB_NM
+			, S.JOB_SCHEDULE
+			, S.JOB_METHOD_CD
+			, C1.DETAIL_NM AS JOB_METHOD_NM
+			, S.JOB_CLASS
+			, S.JOB_TYPE_CD
+			, C2.DETAIL_NM AS JOB_TYPE_NM
+			, S.JOB_PATH
+			, S.JOB_ORDER
+			, S.JOB_STATUS_CD
+			, C5.DETAIL_NM AS JOB_STATUS_NM
+			, S.JOB_USER_ID
+			, S.JOB_TM
+			, S.JOB_WORKER
+			, S.DESCRIPTION
+			, S.SRC_IP
+			, S.SRC_PORT
+			, S.SRC_DBMS_CD
+			, C3.DETAIL_NM AS SRC_DBMS_NM
+			, S.SRC_DB
+			, S.SRC_USER
+			, S.SRC_PASSWD
+			, S.SRC_TYPE_CD
+			, C4.DETAIL_NM AS SRC_TYPE_NM
+			, S.SRC_SQL
+			, S.USE_YN
+		FROM mhdb.TB_SCHEDULE_JOB S
+		LEFT OUTER JOIN mhdb.TB_CODE_DETAIL C1 ON S.JOB_METHOD_CD = C1.DETAIL_CD AND C1.GROUP_CD ='JOB_METHOD_CD'
+		LEFT OUTER JOIN mhdb.TB_CODE_DETAIL C2 ON S.JOB_TYPE_CD   = C2.DETAIL_CD AND C2.GROUP_CD ='JOB_TYPE_CD'
+		LEFT OUTER JOIN mhdb.TB_CODE_DETAIL C3 ON S.SRC_DBMS_CD   = C3.DETAIL_CD AND C3.GROUP_CD ='SRC_DBMS_CD'
+		LEFT OUTER JOIN mhdb.TB_CODE_DETAIL C4 ON S.SRC_TYPE_CD   = C4.DETAIL_CD AND C4.GROUP_CD ='SRC_TYPE_CD'
+		LEFT OUTER JOIN mhdb.TB_CODE_DETAIL C5 ON S.JOB_STATUS_CD = C5.DETAIL_CD AND C5.GROUP_CD ='JOB_STATUS_CD'
+		WHERE 1 = 1
+		<if test='jobId != null and jobId != "" and !jobId.equals("0")'>
+			AND S.JOB_ID = #{jobId}
+		</if>
+		<if test='(jobId == null or jobId.equals("0")) and jobNm != null and jobNm != ""'>
+			AND S.JOB_NM LIKE CONCAT('%', #{jobNm}, '%')
+		</if>
+		ORDER BY S.JOB_NM
+	</select>
+
+	<!-- /* 스케줄 잡 신규 등록 */ -->
+	<insert id="insertScheduleJob" parameterType="com.archiving.sql.dto.ScheduleSaveParamDto">
+		INSERT INTO mhdb.TB_SCHEDULE_JOB
+			(JOB_NM, JOB_SCHEDULE, SRC_IP, SRC_PORT, SRC_DBMS_CD, SRC_DB, SRC_USER, SRC_PASSWD,
+			 SRC_SQL, JOB_METHOD_CD, JOB_CLASS, JOB_TYPE_CD, JOB_PATH, USE_YN, DESCRIPTION, JOB_CD,
+			 JOB_ORDER, JOB_STATUS_CD, JOB_USER_ID, JOB_TM, JOB_WORKER, SRC_TYPE_CD)
+		VALUES
+			(#{job_nm}, #{job_schedule}, #{src_ip}, #{src_port}, #{src_dbms_cd}, #{src_db}, #{src_user}, #{src_passwd},
+			 #{src_sql}, #{job_method_cd}, #{job_class}, #{job_type_cd}, #{job_path}, #{use_yn}, #{description}, #{job_cd},
+			 #{job_order}, #{job_status_cd}, #{job_user_id}, #{job_tm}, #{job_worker}, #{src_type_cd})
+	</insert>
+
+	<!-- /* 스케줄 잡 수정 */ -->
+	<update id="updateScheduleJob" parameterType="com.archiving.sql.dto.ScheduleSaveParamDto">
+		UPDATE mhdb.TB_SCHEDULE_JOB
+		   SET JOB_NM = #{job_nm}
+			 , JOB_CD = #{job_cd}
+			 , JOB_SCHEDULE = #{job_schedule}
+			 , JOB_METHOD_CD = #{job_method_cd}
+			 , JOB_CLASS = #{job_class}
+			 , JOB_TYPE_CD = #{job_type_cd}
+			 , JOB_PATH = #{job_path}
+			 , JOB_ORDER = #{job_order}
+			 , JOB_STATUS_CD = #{job_status_cd}
+			 , JOB_USER_ID = #{job_user_id}
+			 , JOB_TM = #{job_tm}
+			 , JOB_WORKER = #{job_worker}
+			 , DESCRIPTION = #{description}
+			 , SRC_IP = #{src_ip}
+			 , SRC_PORT = #{src_port}
+			 , SRC_DBMS_CD = #{src_dbms_cd}
+			 , SRC_DB = #{src_db}
+			 , SRC_USER = #{src_user}
+			 , SRC_PASSWD = #{src_passwd}
+			 , SRC_TYPE_CD = #{src_type_cd}
+			 , SRC_SQL = #{src_sql}
+			 , USE_YN = #{use_yn}
+		 WHERE JOB_ID = #{job_id}
+	</update>
+
+	<!-- /* 스케줄 잡 삭제 */ -->
+	<delete id="deleteScheduleJob">
+		DELETE FROM mhdb.TB_SCHEDULE_JOB WHERE JOB_ID = #{jobId}
+	</delete>
+
+	<!-- /* 스케줄 잡 컬럼 설정 삭제 */ -->
+	<delete id="deleteScheduleCols">
+		DELETE FROM mhdb.TB_SCHEDULE_COL WHERE JOB_ID = #{jobId}
+	</delete>
+
+	<!-- /* (레거시) 로드잡-테이블 목록 조회 */ -->
+	<select id="selectJobTableList" resultType="map">
+		SELECT
+			  J.SERVER_ID
+			, J.JOB_ID
+			, J.JOB_NM
+			, J.TABLE_ID
+			, J.SOURCE_PATH
+			, J.SOURCE_FILE
+			, J.INFO_PATH
+			, J.INFO_FILE
+			, J.JOB_TM
+			, J.SCHEDULE_YN
+			, J.SCHEDULE_VALUE
+			, J.ERROR_PATH
+			, J.SOURCE_DEL_YN
+			, J.LAST_COL_YN
+			, J.JOB_CD
+			, J.USE_YN
+			, S.SERVER_NM
+			, T.TABLE_CD
+			, T.TABLE_NM
+		FROM mhdb.TB_LOAD_JOB_MST J
+		LEFT OUTER JOIN mhdb.TB_TABLE_INFO T ON J.TABLE_ID = T.TABLE_ID
+		LEFT OUTER JOIN mhdb.TB_SERVER S ON J.SERVER_ID = S.SERVER_ID
+		WHERE 1 = 1
+		<if test='useYn != null and useYn != "" and !"*".equals(useYn)'>
+			AND J.USE_YN = #{useYn}
+		</if>
+		<if test='serverId != null and serverId != "" and !"*".equals(serverId)'>
+			AND CAST(J.SERVER_ID AS VARCHAR) = #{serverId}
+		</if>
+		<if test='jobNm != null and jobNm != "" and !"*".equals(jobNm)'>
+			AND CAST(J.JOB_NM AS VARCHAR) ILIKE '%' || #{jobNm} || '%'
+		</if>
+		ORDER BY J.JOB_ID
+	</select>
+
+	<!-- /* 배치 목록 조회(잡ID/잡명 조건) */ -->
+	<select id="selectBatchList" resultType="map">
+		SELECT
+			  '' AS SELL
+			, S.JOB_ID
+			, S.JOB_STATUS_CD
+			, C2.DETAIL_NM AS JOB_STATUS_NM
+			, S.JOB_USER_ID
+			, S.JOB_TM
+			, S.JOB_WORKER
+		FROM mhdb.TB_BATCH_LIST S
+		LEFT OUTER JOIN mhdb.TB_CODE_DETAIL C2 ON S.JOB_STATUS_CD = C2.DETAIL_CD AND C2.GROUP_CD ='JOB_STATUS_CD'
+		JOIN mhdb.TB_USER_INFO U ON S.JOB_USER_ID = U.USER_ID
+		WHERE 1 = 1
+		<if test='jobId != null and jobId != "" and !jobId.equals("0")'>
+			AND S.JOB_ID = #{jobId}
+		</if>
+		<if test='(jobId == null or jobId.equals("0")) and jobNm != null and jobNm != ""'>
+			AND S.JOB_NM LIKE CONCAT('%', #{jobNm}, '%')
+		</if>
+		ORDER BY S.JOB_ID
+	</select>
+
+	<!-- /* 배치 목록 신규 등록 */ -->
+	<insert id="insertBatchList" parameterType="com.archiving.sql.dto.BatchListSaveParamDto">
+		INSERT INTO mhdb.TB_BATCH_LIST
+			(JOB_NM, JOB_TYPE_CD, JOB_PATH, JOB_ORDER, JOB_STATUS_CD, JOB_USER_ID,
+			 JOB_TM, JOB_WORKER, DESCRIPTION, SRC_SQL, USE_YN)
+		VALUES
+			(#{job_nm}, #{job_type_cd}, #{job_path}, #{job_order}, #{job_status_cd}, #{job_user_id},
+			 #{job_tm}, #{job_worker}, #{description}, #{src_sql}, #{use_yn})
+	</insert>
+
+	<!-- /* 배치 목록 수정 */ -->
+	<update id="updateBatchList" parameterType="com.archiving.sql.dto.BatchListSaveParamDto">
+		UPDATE mhdb.TB_BATCH_LIST
+		   SET JOB_NM = #{job_nm}
+			 , JOB_TYPE_CD = #{job_type_cd}
+			 , JOB_PATH = #{job_path}
+			 , JOB_ORDER = #{job_order}
+			 , JOB_STATUS_CD = #{job_status_cd}
+			 , JOB_USER_ID = #{job_user_id}
+			 , JOB_TM = #{job_tm}
+			 , JOB_WORKER = #{job_worker}
+			 , DESCRIPTION = #{description}
+			 , SRC_SQL = #{src_sql}
+			 , USE_YN = #{use_yn}
+		 WHERE JOB_ID = #{job_id}
+	</update>
+
+	<!-- /* 배치 목록 삭제 */ -->
+	<delete id="deleteBatchList">
+		DELETE FROM mhdb.TB_BATCH_LIST WHERE JOB_ID = #{jobId}
+	</delete>
+
+	<!-- /* 배치 리포트 SQL 업데이트 */ -->
+	<update id="updateBatchReportSql">
+		UPDATE mhdb.TB_BATCH_LIST
+		   SET JOB_STATUS_CD = #{jobStatusCd}
+			 , REPORT_SQL = #{srcSql}
+		 WHERE JOB_ID = #{jobId}
+	</update>
+
+	<!-- /* 배치 리포트 SQL 신규 등록 */ -->
+	<insert id="insertBatchReportSql">
+		INSERT INTO mhdb.TB_BATCH_LIST
+			(JOB_STATUS_CD, JOB_USER_ID, REPORT_SQL, USE_YN, LST_UPD_TM, JOB_ORDER)
+		VALUES
+			(#{jobStatusCd}, #{jobUserId}, #{srcSql}, #{useYn}, #{lstUpdTm}, #{jobOrder})
+	</insert>
+
+</mapper>
+

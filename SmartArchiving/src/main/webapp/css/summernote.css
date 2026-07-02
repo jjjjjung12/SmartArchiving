@@ -1,0 +1,37 @@
+@charset "utf-8";
+
+/* 이미지 팝업 */
+.note-modal {
+	top: 38% !important;
+}
+.note-modal-footer {
+	padding: 0px;
+}
+.note-modal-footer .note-btn {
+	float: none;	
+}
+.note-modal-header .close {
+    top: 14% !important;
+}
+input[type="file"].note-image-input {
+    line-height: 10px;
+}
+.note-modal-footer,.note-group-image-url {
+	display: none;
+}
+
+/* 컬러팔레트 팝업 */
+.note-color .note-palette {
+	display: inline-block !important;
+}
+.note-color .note-dropdown-menu {
+	min-width: 392px !important;
+}
+.note-color .note-palette:first-child {
+	margin: 0 20px !important;
+}
+
+/* 문단정렬 팝업 */
+.note-para .note-dropdown-menu {
+	min-width: 240px !important;
+}

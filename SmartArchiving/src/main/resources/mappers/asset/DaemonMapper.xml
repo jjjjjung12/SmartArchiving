@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.archiving.asset.dao.mapper.DaemonMapper">
+
+	<!-- /* 데몬 목록 조회(데몬ID/사용여부 조건) */ -->
+	<select id="selectDaemonList" resultType="com.archiving.asset.dto.DaemonDto">
+		SELECT
+			D.DAEMON_ID        AS daemonId,
+			D.DAEMON_CD        AS daemonCd,
+			D.DAEMON_NM        AS daemonNm,
+			D.DAEMON_DESC      AS daemonDesc,
+			D.DAEMON_STAT_CD   AS daemonStatCd,
+			D.DAEMON_RESTART_YN AS daemonRestartYn,
+			D.DAEMON_USE_YN    AS daemonUseYn,
+			C.DETAIL_NM        AS daemonStatNm,
+			D.DAEMON_START_PATH AS daemonStartPath,
+			D.DAEMON_STOP_PATH  AS daemonStopPath,
+			D.DAEMON_RESTART_PATH AS daemonRestartPath,
+			substring(D.HEARTBEAT_TIME, 1, 19) AS heartbeatTime
+		FROM mhdb.TB_DAEMON D
+		LEFT OUTER JOIN mhdb.TB_CODE_DETAIL C
+			ON D.DAEMON_STAT_CD = C.DETAIL_CD
+			AND 'DAEMON_STAT_CD' = C.GROUP_CD
+		WHERE 1=1
+		<if test='useYn != null and useYn != "" and useYn != "A"'>
+			AND D.DAEMON_USE_YN like concat('%', #{useYn}, '%')
+		</if>
+		<if test='daemonId != null and daemonId != "" and daemonId != "*"'>
+			AND D.DAEMON_ID = (#{daemonId})::integer
+		</if>
+		<if test='searchVal != null and searchVal != ""'>
+			<choose>
+			  <when test='searchCol == "DAEMON_CD"'>
+				AND UPPER(D.DAEMON_CD) LIKE '%' || UPPER(#{searchVal}) || '%'
+			  </when>
+			  <when test='searchCol == "DAEMON_NM"'>
+				AND UPPER(D.DAEMON_NM) LIKE '%' || UPPER(#{searchVal}) || '%'
+			  </when>
+			  <when test='searchCol == "DAEMON_START_PATH"'>
+				AND UPPER(D.DAEMON_START_PATH) LIKE '%' || UPPER(#{searchVal}) || '%'
+			  </when>
+			  <when test='searchCol == "DAEMON_STOP_PATH"'>
+				AND UPPER(D.DAEMON_STOP_PATH) LIKE '%' || UPPER(#{searchVal}) || '%'
+			  </when>
+			  <when test='searchCol == "DAEMON_RESTART_PATH"'>
+				AND UPPER(D.DAEMON_RESTART_PATH) LIKE '%' || UPPER(#{searchVal}) || '%'
+			  </when>
+			  <when test='searchCol == "DAEMON_DESC"'>
+				AND UPPER(D.DAEMON_DESC) LIKE '%' || UPPER(#{searchVal}) || '%'
+			  </when>
+			  <otherwise>
+				AND (
+					UPPER(D.DAEMON_CD) LIKE '%' || UPPER(#{searchVal}) || '%'
+					OR UPPER(D.DAEMON_NM) LIKE '%' || UPPER(#{searchVal}) || '%'
+					OR UPPER(D.DAEMON_START_PATH) LIKE '%' || UPPER(#{searchVal}) || '%'
+					OR UPPER(D.DAEMON_STOP_PATH) LIKE '%' || UPPER(#{searchVal}) || '%'
+					OR UPPER(D.DAEMON_RESTART_PATH) LIKE '%' || UPPER(#{searchVal}) || '%'
+					OR UPPER(D.DAEMON_DESC) LIKE '%' || UPPER(#{searchVal}) || '%'
+				)
+			  </otherwise>
+			</choose>
+		</if>
+		ORDER BY D.DAEMON_ID
+	</select>
+
+	<!-- /* 데몬 신규 등록 */ -->
+	<insert id="insertDaemon" parameterType="com.archiving.asset.dto.DaemonSaveParamDto" useGeneratedKeys="true" keyProperty="daemon_id">
+		INSERT INTO mhdb.TB_DAEMON (
+			DAEMON_CD,
+			DAEMON_NM,
+			DAEMON_DESC,
+			DAEMON_STAT_CD,
+			DAEMON_RESTART_YN,
+			DAEMON_USE_YN,
+			HEARTBEAT_TIME,
+			DAEMON_START_PATH,
+			DAEMON_STOP_PATH,
+			DAEMON_RESTART_PATH
+		)
+		VALUES (
+			#{daemon_cd},
+			#{daemon_nm},
+			#{daemon_desc},
+			'1',
+			'',
+			#{use_yn},
+			now(),
+			#{daemon_start_path},
+			#{daemon_stop_path},
+			#{daemon_restart_path}
+		)
+	</insert>
+
+	<!-- /* 데몬 정보 수정 */ -->
+	<update id="updateDaemon" parameterType="com.archiving.asset.dto.DaemonSaveParamDto">
+		UPDATE mhdb.TB_DAEMON
+		SET
+			DAEMON_NM = #{daemon_nm},
+			DAEMON_CD = #{daemon_cd},
+			DAEMON_DESC = #{daemon_desc},
+			DAEMON_STAT_CD = #{daemon_stat_cd},
+			DAEMON_RESTART_YN = #{daemon_restart_yn},
+			DAEMON_USE_YN = #{use_yn},
+			DAEMON_START_PATH = #{daemon_start_path},
+			DAEMON_STOP_PATH = #{daemon_stop_path},
+			DAEMON_RESTART_PATH = #{daemon_restart_path}
+		WHERE 1=1
+			AND DAEMON_ID = (#{daemon_id})::integer
+	</update>
+
+	<!-- /* 데몬 삭제 */ -->
+	<delete id="deleteDaemon">
+		DELETE FROM mhdb.TB_DAEMON
+		WHERE 1=1
+			AND DAEMON_ID = (#{daemonId})::integer
+	</delete>
+
+	<!-- /* 데몬 커맨드(명령) 업데이트 */ -->
+	<update id="updateDaemonCommand">
+		UPDATE mhdb.TB_DAEMON
+		SET
+			COMMAND = #{command}
+		WHERE 1=1
+			AND DAEMON_ID = (#{daemonId})::integer
+	</update>
+
+	<!-- /* 데몬 명령 이력 등록 */ -->
+	<insert id="insertDaemonHist">
+		INSERT INTO mhdb.TB_DAEMON_HIST (
+			DAEMON_ID,
+			DAEMON_NM,
+			CR_DATETIME,
+			USER_ID,
+			COMMAND
+		)
+		VALUES (
+			#{daemonId}::integer,
+			#{daemonNm},
+			now(),
+			#{userId},
+			#{command}
+		)
+	</insert>
+
+</mapper>
+

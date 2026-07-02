@@ -1,17 +1,20 @@
 package com.archiving.auth.service;
 
+import java.util.Set;
+
 import javax.servlet.http.HttpSession;
 
-import org.springframework.stereotype.Service;
+public interface MenuAuthService {
 
-@Service
-public class MenuAuthService {
+	String SESSION_ALLOWED_MENU_PATHS = "allowedMenuPaths";
 
-    public static final String SESSION_ALLOWED_MENU_PATHS = "allowedMenuPaths";
+	boolean isAdmin(String userCd, String groupId);
 
-    public void clearAllowedMenuPathsCache(HttpSession session) {
-        if (session != null) {
-            session.removeAttribute(SESSION_ALLOWED_MENU_PATHS);
-        }
-    }
+	Set<String> getAllowedMenuPaths(HttpSession session, String contextPath);
+
+	void clearAllowedMenuPathsCache(HttpSession session);
+
+	boolean canAccessPage(HttpSession session, String contextPath, String normalizedRequestPath);
+
+	boolean canAccessApi(HttpSession session, String contextPath, String servletPath);
 }

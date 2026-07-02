@@ -12,8 +12,7 @@
 
 		<RollingFile name="UserLogFile"
 					 fileName="${LOG_DIR}/userlog.log"
-					 filePattern="${LOG_DIR}/userlog.%d{yyyy-MM-dd}.log"
-					 createDirsOnStartup="true">
+					 filePattern="${LOG_DIR}/userlog.%d{yyyy-MM-dd}.log">
 			<PatternLayout pattern="${LOG_PATTERN}"/>
 			<Policies>
 				<TimeBasedTriggeringPolicy interval="1" modulate="true"/>

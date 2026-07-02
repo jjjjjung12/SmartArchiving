@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.comm.dao.mapper.NoticeMapper">
+
+	<!-- /* 공지사항 관리 목록 조회 */ -->
+	<select id="selectNoticeManageList" resultType="com.archiving.comm.dto.NoticeDto">
+		SELECT
+			n.SERIAL_NUMBER   AS serialNumber,
+			n.REG_USER_CD     AS regUserCd,
+			u.USER_NM         AS userNm,
+			n.SUBJECT         AS subject,
+			n.REG_DATE        AS regDate,
+			n.REG_START_DATE  AS regStartDate,
+			n.REG_END_DATE    AS regEndDate,
+			n.SUBJECT_DETAIL  AS subjectDetail,
+			n.FILE_NM         AS fileNm,
+			n.FILE_URL        AS fileUrl
+		FROM mhdb.TB_COMMON_NOTICE n
+		LEFT OUTER JOIN mhdb.TB_USER_INFO u ON (n.REG_USER_CD = u.USER_CD)
+		WHERE 1=1
+		ORDER BY n.SERIAL_NUMBER DESC
+	</select>
+
+	<!-- /* 공지사항 삭제 */ -->
+	<delete id="deleteNotice">
+		DELETE FROM mhdb.TB_COMMON_NOTICE
+		WHERE SERIAL_NUMBER = #{serialNumber}
+	</delete>
+
+	<!-- /* 공지사항 시리얼 suffix — 당일 SERIAL_NUMBER 최대 순번 + 1 (삭제된 번호는 재사용하지 않음) */ -->
+	<select id="selectNextNoticeSerialSuffix" resultType="string">
+		SELECT LPAD(
+			(COALESCE(MAX(RIGHT(CAST(SERIAL_NUMBER AS VARCHAR), 3)::INTEGER), 0) + 1)::TEXT,
+			3, '0'
+		)
+		FROM mhdb.TB_COMMON_NOTICE
+		WHERE CAST(SERIAL_NUMBER AS VARCHAR) LIKE #{regDate} || '%'
+	</select>
+
+	<!-- /* 공지사항 등록 */ -->
+	<insert id="insertNotice" parameterType="com.archiving.comm.dto.NoticeDto">
+		INSERT INTO mhdb.TB_COMMON_NOTICE (
+			SERIAL_NUMBER,
+			REG_USER_CD,
+			SUBJECT,
+			REG_DATE,
+			REG_START_DATE,
+			REG_END_DATE,
+			SUBJECT_DETAIL,
+			FILE_NM,
+			FILE_URL
+		)
+		VALUES (
+			#{serialNumber},
+			#{regUserCd},
+			#{subject},
+			#{regDate},
+			#{regStartDate},
+			#{regEndDate},
+			#{subjectDetail},
+			#{fileNm},
+			#{fileUrl}
+		)
+	</insert>
+
+	<!-- /* 공지 확인여부(일자) 전체 초기화 */ -->
+	<update id="resetNoticeDayChk">
+		UPDATE mhdb.TB_NOTICE_DAY
+		SET CHK_YN = 'N'
+	</update>
+
+	<!-- /* 사용자별 공지 확인여부 존재 카운트 */ -->
+	<select id="countNoticeDay" resultType="int">
+		SELECT COUNT(1)
+		FROM mhdb.TB_NOTICE_DAY
+		WHERE USER_CD = #{userCd}
+		  AND CHK_DATE = #{chkDate}
+	</select>
+
+	<!-- /* 사용자 공지 확인여부 Y로 업데이트 */ -->
+	<update id="updateNoticeDayChkY">
+		UPDATE mhdb.TB_NOTICE_DAY
+		SET CHK_YN = 'Y'
+		WHERE USER_CD = #{userCd}
+	</update>
+
+	<!-- /* 사용자 공지 확인 이력 등록 */ -->
+	<insert id="insertNoticeDay">
+		INSERT INTO mhdb.TB_NOTICE_DAY (USER_CD, CHK_DATE, CHK_YN)
+		VALUES (#{userCd}, #{chkDate}, 'Y')
+	</insert>
+
+</mapper>
+

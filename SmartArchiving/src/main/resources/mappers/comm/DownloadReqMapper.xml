@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.comm.dao.mapper.DownloadReqMapper">
+
+	<!-- /* 당일(등록일) 다운로드 요청 건수 카운트(사용자 기준) */ -->
+	<select id="countTodayReq" resultType="int">
+		SELECT COUNT(1)
+		FROM mhdb.TB_DOWNLOAD_REQ
+		WHERE REG_DATE = #{regDate}
+		  AND USER_CD = #{userCd}
+	</select>
+
+	<!-- /* 인사마스터(사번) 지점정보 조회 */ -->
+	<select id="selectInsaBranch" resultType="com.archiving.comm.dao.mapper.DownloadReqMapper$InsaBranchRow">
+		SELECT BRC AS brc, BRNM AS brnm
+		FROM mhdb.TB_INSA_MST
+		WHERE ENO = #{eno}
+	</select>
+
+	<!-- /* 다운로드 요청 등록 */ -->
+	<insert id="insertDownloadReq" parameterType="com.archiving.comm.dao.mapper.DownloadReqMapper$InsertDownloadReqParam">
+		INSERT INTO mhdb.TB_DOWNLOAD_REQ (
+			USER_CD, USER_NM, REQ_DIV, REQ_NM, REQ_NUM, REQ_REASON,
+			PROGRAM_ID, PROGRAM_NM, REG_DATE, PROGRAM_WHERE, BULK_YN
+		)
+		VALUES (
+			#{userCd}, #{userNm}, #{reqDiv}, #{reqNm}, #{reqNum}, #{reqReason},
+			#{programId},
+			(SELECT MENU_NM FROM mhdb.TB_MENU WHERE MENU_URL ILIKE concat('%', #{programId}, '%') LIMIT 1),
+			#{regDate},
+			#{programWhere},
+			'N'
+		)
+	</insert>
+
+</mapper>
+

@@ -1,13 +1,5 @@
-<%@ page import="com.initech.provider.crypto.InitechProvider"%>
-<%@ page import="com.initech.provider.crypto.Provider"%>
-<%@ page import="java.security.*"%>
 <!-- ticket 값을 생성하기 위한 페이지 -->
 <%!
-	static{
-		InitechProvider xx = new InitechProvider();
-		xx.changeMode();
-	}
-
 	public String cutCarriageReturn(String oriString) {
 		if(oriString == null) {
 			oriString = "";

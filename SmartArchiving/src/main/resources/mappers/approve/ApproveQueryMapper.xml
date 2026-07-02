@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.approve.dao.mapper.ApproveQueryMapper">
+
+	<!-- /* 결재 현황 목록 조회(기간/사용자코드 조건) */ -->
+	<select id="selectApproveStatList" resultType="com.archiving.approve.dto.ApproveStatRowDto">
+		SELECT
+			A.USER_CD AS userCd,
+			A.BRNM AS brnm,
+			A.NAME AS name,
+			A.APPROVAL_DIV_CD AS approvalDivCd,
+			A.APPROVAL_REQ_ID AS approvalReqId,
+			A.REQ_DATE AS reqDate,
+			A.APPROVAL_REQ_REASON AS approvalReqReason,
+			(SELECT APPROVAL_DATE FROM mhdb.TB_APPROVAL_LINE B
+				WHERE B.USER_CD = A.USER_CD AND B.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND B.APPROVAL_LINE_INDEX=1) AS firstApprovalDate,
+			(SELECT APPROVAL_LINE_USER_NM FROM mhdb.TB_APPROVAL_LINE B
+				WHERE B.USER_CD = A.USER_CD AND B.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND B.APPROVAL_LINE_INDEX=1) AS firstApprovalLineUserNm,
+			(SELECT APPROVAL_YN FROM mhdb.TB_APPROVAL_LINE B
+				WHERE B.USER_CD = A.USER_CD AND B.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND B.APPROVAL_LINE_INDEX=1) AS firstApprovalYn,
+			(SELECT CASE WHEN APPROVAL_YN = 'Y' THEN '결재' WHEN APPROVAL_YN = 'N' THEN '반려' ELSE '대기' END
+				FROM mhdb.TB_APPROVAL_LINE B
+				WHERE B.USER_CD = A.USER_CD AND B.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND B.APPROVAL_LINE_INDEX=1) AS firstApprovalYnNm,
+			(SELECT APPROVAL_REJECT_DOCU FROM mhdb.TB_APPROVAL_LINE B
+				WHERE B.USER_CD = A.USER_CD AND B.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND B.APPROVAL_LINE_INDEX=1) AS firstApprovalRejectDocu,
+
+			(SELECT APPROVAL_DATE FROM mhdb.TB_APPROVAL_LINE B
+				WHERE B.USER_CD = A.USER_CD AND B.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND B.APPROVAL_LINE_INDEX=2) AS secondApprovalDate,
+			(SELECT APPROVAL_LINE_USER_NM FROM mhdb.TB_APPROVAL_LINE B
+				WHERE B.USER_CD = A.USER_CD AND B.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND B.APPROVAL_LINE_INDEX=2) AS secondApprovalLineUserNm,
+			(SELECT APPROVAL_YN FROM mhdb.TB_APPROVAL_LINE B
+				WHERE B.USER_CD = A.USER_CD AND B.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND B.APPROVAL_LINE_INDEX=2) AS secondApprovalYn,
+			(SELECT CASE WHEN APPROVAL_YN = 'Y' THEN '결재' WHEN APPROVAL_YN = 'N' THEN '반려' ELSE '대기' END
+				FROM mhdb.TB_APPROVAL_LINE B
+				WHERE B.USER_CD = A.USER_CD AND B.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND B.APPROVAL_LINE_INDEX=2) AS secondApprovalYnNm,
+			(SELECT APPROVAL_REJECT_DOCU FROM mhdb.TB_APPROVAL_LINE B
+				WHERE B.USER_CD = A.USER_CD AND B.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND B.APPROVAL_LINE_INDEX=2) AS secondApprovalRejectDocu,
+
+			(SELECT APPROVAL_DATE FROM mhdb.TB_APPROVAL_LINE B
+				WHERE B.USER_CD = A.USER_CD AND B.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND B.APPROVAL_LINE_INDEX=3) AS thirdApprovalDate,
+			(SELECT APPROVAL_LINE_USER_NM FROM mhdb.TB_APPROVAL_LINE B
+				WHERE B.USER_CD = A.USER_CD AND B.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND B.APPROVAL_LINE_INDEX=3) AS thirdApprovalLineUserNm,
+			(SELECT APPROVAL_YN FROM mhdb.TB_APPROVAL_LINE B
+				WHERE B.USER_CD = A.USER_CD AND B.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND B.APPROVAL_LINE_INDEX=3) AS thirdApprovalYn,
+			(SELECT CASE WHEN APPROVAL_YN = 'Y' THEN '결재' WHEN APPROVAL_YN = 'N' THEN '반려' ELSE '대기' END
+				FROM mhdb.TB_APPROVAL_LINE B
+				WHERE B.USER_CD = A.USER_CD AND B.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND B.APPROVAL_LINE_INDEX=3) AS thirdApprovalYnNm,
+			(SELECT APPROVAL_REJECT_DOCU FROM mhdb.TB_APPROVAL_LINE B
+				WHERE B.USER_CD = A.USER_CD AND B.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND B.APPROVAL_LINE_INDEX=3) AS thirdApprovalRejectDocu,
+			(SELECT COUNT(*) FROM mhdb.TB_BULK_JOB_REQ B WHERE B.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND B.file_url is not null) AS bulkCnt
+		FROM mhdb.TB_APPROVAL_REQ A
+		WHERE 1=1
+		<if test='userCd != null and userCd != ""'>
+<!-- 			AND UPPER(A.USER_CD) LIKE UPPER(concat('%', #{userCd}, '%')) -->
+			AND UPPER(A.USER_CD) LIKE UPPER(#{userCd})
+		</if>
+		<if test='start != null and start != ""'>
+			AND A.REQ_DATE &gt;= #{start}
+		</if>
+		<if test='end != null and end != ""'>
+			AND A.REQ_DATE &lt;= #{end}
+		</if>
+		ORDER BY A.APPROVAL_REQ_ID
+	</select>
+
+	<!-- /* 결재 현황 사용자 팝업(대상 사용자 목록) 조회 */ -->
+	<select id="selectApproveStatUserPop" resultType="com.archiving.approve.dao.mapper.ApproveQueryMapper$UserPopRow">
+		SELECT DISTINCT(USER_CD) AS userCd, NAME AS userNm
+		FROM mhdb.TB_APPROVAL_REQ
+		WHERE 1=1
+		<if test='userCd != null and userCd != ""'>
+			AND USER_CD = #{userCd}
+		</if>
+	</select>
+
+	<!-- /* 결재 처리(결재자 기준) 대상 목록 조회 */ -->
+	<select id="selectApproveProcList" resultType="com.archiving.approve.dto.ApproveProcRowDto">
+		SELECT
+			A.USER_CD AS userCd,
+			A.NAME AS userNm,
+			A.APPROVAL_DIV_CD AS approvalDivCd,
+			A.APPROVAL_REQ_ID AS approvalReqId,
+			A.REQ_DATE AS reqDate,
+			A.APPROVAL_REQ_REASON AS approvalReqReason,
+			A.PROGRAM_ID AS programId,
+			A.PROGRAM_NM AS programNm,
+			A.BRC AS brc,
+			A.BRNM AS brnm,
+			A.OFT_C AS oftC,
+			A.OFT AS oft,
+			A.IP_ADDRESS AS ipAddress,
+			A.AUTH AS auth,
+			A.COM_CD AS comCd,
+			A.EXPIRE_DATE AS expireDate,
+			B.APPROVAL_LINE_USER_ID AS approvalLineUserId,
+			B.APPROVAL_DATE AS approvalDate,
+			B.APPROVAL_YN AS approvalYn,
+			B.APPROVAL_LINE_INDEX AS approvalLineIndex,
+			B.APPROVAL_REJECT_DOCU AS approvalRejectDocu,
+			B.APPROVAL_REQ_DOCU AS approvalReqDocu,
+			B.APPROVAL_LINE_USER_NM AS approvalLineUserNm,
+			CASE WHEN B.APPROVAL_YN = 'Y' THEN '승인' WHEN B.APPROVAL_YN = 'N' THEN '반려' ELSE '' END AS approvalYnNm
+		FROM mhdb.TB_APPROVAL_REQ A, mhdb.TB_APPROVAL_LINE B
+		WHERE 1=1
+		  AND A.USER_CD = B.USER_CD
+		  AND A.APPROVAL_DIV_CD = B.APPROVAL_DIV_CD
+		  AND A.APPROVAL_REQ_ID = B.APPROVAL_REQ_ID
+		  AND B.BEFORE_APPLY_YN = 'Y'
+		  AND B.APPROVAL_LINE_USER_ID = #{approverUserCd}
+		ORDER BY A.REQ_DATE DESC, A.APPROVAL_REQ_ID DESC
+	</select>
+
+	<!-- /* 결재 처리(관리자) 대상 목록 조회 */ -->
+	<select id="selectApproveProcAdminList" resultType="com.archiving.approve.dto.ApproveProcRowDto">
+		SELECT
+			A.USER_CD AS userCd,
+			A.NAME AS userNm,
+			A.APPROVAL_DIV_CD AS approvalDivCd,
+			A.APPROVAL_REQ_ID AS approvalReqId,
+			A.REQ_DATE AS reqDate,
+			A.APPROVAL_REQ_REASON AS approvalReqReason,
+			A.PROGRAM_ID AS programId,
+			A.PROGRAM_NM AS programNm,
+			A.BRC AS brc,
+			A.BRNM AS brnm,
+			A.OFT_C AS oftC,
+			A.OFT AS oft,
+			A.IP_ADDRESS AS ipAddress,
+			A.AUTH AS auth,
+			A.COM_CD AS comCd,
+			A.EXPIRE_DATE AS expireDate,
+			B.APPROVAL_LINE_USER_ID AS approvalLineUserId,
+			B.APPROVAL_DATE AS approvalDate,
+			B.APPROVAL_YN AS approvalYn,
+			B.APPROVAL_LINE_INDEX AS approvalLineIndex,
+			B.APPROVAL_REJECT_DOCU AS approvalRejectDocu,
+			B.APPROVAL_REQ_DOCU AS approvalReqDocu,
+			B.APPROVAL_LINE_USER_NM AS approvalLineUserNm,
+			CASE WHEN B.APPROVAL_YN = 'Y' THEN '승인' WHEN B.APPROVAL_YN = 'N' THEN '반려' ELSE '' END AS approvalYnNm,
+			(SELECT COUNT(*) FROM mhdb.TB_BULK_JOB_REQ C WHERE C.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND C.file_url is not null ) AS bulkCnt
+		FROM mhdb.TB_APPROVAL_REQ A, mhdb.TB_APPROVAL_LINE B
+		WHERE 1=1
+		  AND A.USER_CD = B.USER_CD
+		  AND A.APPROVAL_DIV_CD = B.APPROVAL_DIV_CD
+		  AND A.APPROVAL_REQ_ID = B.APPROVAL_REQ_ID
+		  AND B.BEFORE_APPLY_YN = 'Y'
+		  AND B.APPROVAL_LINE_INDEX = 3
+		ORDER BY A.REQ_DATE DESC, A.APPROVAL_REQ_ID DESC
+	</select>
+
+	<!-- /* 결재 처리(관리자) 대상 목록 조회(폴백 쿼리) */ -->
+	<select id="selectApproveProcAdminListFallback" resultType="com.archiving.approve.dto.ApproveProcRowDto">
+		SELECT
+			A.USER_CD AS userCd,
+			A.NAME AS userNm,
+			A.APPROVAL_DIV_CD AS approvalDivCd,
+			A.APPROVAL_REQ_ID AS approvalReqId,
+			A.REQ_DATE AS reqDate,
+			A.APPROVAL_REQ_REASON AS approvalReqReason,
+			A.PROGRAM_ID AS programId,
+			A.PROGRAM_NM AS programNm,
+			A.BRC AS brc,
+			A.BRNM AS brnm,
+			A.OFT_C AS oftC,
+			A.OFT AS oft,
+			A.IP_ADDRESS AS ipAddress,
+			A.AUTH AS auth,
+			A.COM_CD AS comCd,
+			A.EXPIRE_DATE AS expireDate,
+			B.APPROVAL_LINE_USER_ID AS approvalLineUserId,
+			B.APPROVAL_DATE AS approvalDate,
+			B.APPROVAL_YN AS approvalYn,
+			B.APPROVAL_LINE_INDEX AS approvalLineIndex,
+			B.APPROVAL_REJECT_DOCU AS approvalRejectDocu,
+			B.APPROVAL_REQ_DOCU AS approvalReqDocu,
+			B.APPROVAL_LINE_USER_NM AS approvalLineUserNm,
+			CASE WHEN B.APPROVAL_YN = 'Y' THEN '승인' WHEN B.APPROVAL_YN = 'N' THEN '반려' ELSE '' END AS approvalYnNm,
+			(SELECT COUNT(*) FROM mhdb.TB_BULK_JOB_REQ C WHERE C.APPROVAL_REQ_ID = A.APPROVAL_REQ_ID AND C.file_url is not null ) AS bulkCnt
+		FROM mhdb.TB_APPROVAL_REQ A, mhdb.TB_APPROVAL_LINE B
+		WHERE 1=1
+		  AND A.USER_CD = B.USER_CD
+		  AND A.APPROVAL_DIV_CD = B.APPROVAL_DIV_CD
+		  AND A.APPROVAL_REQ_ID = B.APPROVAL_REQ_ID
+		  AND B.BEFORE_APPLY_YN = 'Y'
+		ORDER BY A.REQ_DATE DESC, A.APPROVAL_REQ_ID DESC
+	</select>
+
+	<!-- /* 다운로드 요청 목록 조회(기간/사용자/구분/요청번호/벌크여부 조건) */ -->
+	<select id="selectDownloadReqList" resultType="com.archiving.approve.dto.DownloadReqRowDto">
+		SELECT
+			USER_CD AS userCd,
+			USER_NM AS userNm,
+			REQ_TIME AS reqTime,
+			REQ_DIV AS reqDiv,
+			REQ_NM AS reqNm,
+			REQ_NUM AS reqNum,
+			WARRANT_NUM AS warrantNum,
+			REQ_REASON AS reqReason,
+			PROGRAM_ID AS programId,
+			PROGRAM_NM AS programNm,
+			REG_DATE AS regDate,
+			PROGRAM_WHERE AS programWhere,
+			BULK_YN AS bulkYn
+		FROM mhdb.TB_DOWNLOAD_REQ
+		WHERE 1=1
+		<if test='start != null and start != ""'>
+			AND REG_DATE &gt;= #{start}
+		</if>
+		<if test='end != null and end != ""'>
+			AND REG_DATE &lt;= #{end}
+		</if>
+		<if test='userNm != null and userNm != ""'>
+			AND USER_NM LIKE concat('%', #{userNm}, '%')
+		</if>
+		<if test='downCd != null and downCd != ""'>
+			AND REQ_DIV = #{downCd}
+		</if>
+		<if test='reqNum != null and reqNum != ""'>
+			AND REQ_NUM LIKE concat('%', #{reqNum}, '%')
+		</if>
+		<if test='bulkYn != null and bulkYn != ""'>
+			AND BULK_YN = #{bulkYn}
+		</if>
+		ORDER BY REG_DATE
+	</select>
+
+	<!-- /* 마스킹 처리 이력 조회(기간 조건) */ -->
+	<select id="selectMaskHistoryList" resultType="com.archiving.approve.dto.MaskHistoryRowDto">
+		SELECT
+			USER_CD AS userCd,
+			REQ_DATE AS reqDate,
+			APPROVAL_REQ_ID AS approvalReqId,
+			USER_NM AS userNm,
+			PROGRAM_ID AS programId,
+			PROGRAM_NM AS programNm,
+			PROC_DATE AS procDate
+		FROM mhdb.TB_MASK_HISTORY
+		WHERE 1=1
+		<if test='start != null and start != ""'>
+			AND REQ_DATE &gt;= #{start}::date
+		</if>
+		<if test='end != null and end != ""'>
+			AND REQ_DATE &lt;= #{end}::date
+		</if>
+		ORDER BY REQ_DATE
+	</select>
+	
+	<!-- /* 권한 신청 내용 조회 API */ -->
+	<select id="selectUserAuthApplyDetail" resultType="com.archiving.approve.dto.UserAuthApplyDetailRowDto">
+		SELECT USER_CD 
+		     , APPROVAL_DIV_CD
+		     , APPROVAL_REQ_ID
+		     , NAME	
+		     , BRC
+		     , BRNM
+		     , BUSSINESS_NM 
+		     , IP_ADDRESS
+		     , APPROVAL_REQ_REASON 
+		     , REQ_DATE
+		     , AUTH
+		     , EXPIRE_DATE 
+		     , APPROVAL_DATE
+		     , PROGRAM_ID 
+		     , PROGRAM_NM 
+		     , OFT_C
+		     , OFT
+		     , COM_CD
+		  FROM mhdb.TB_APPROVAL_REQ
+		 WHERE 1=1
+		   AND APPROVAL_REQ_ID = #{approvalReqId}
+	</select>
+
+</mapper>
+

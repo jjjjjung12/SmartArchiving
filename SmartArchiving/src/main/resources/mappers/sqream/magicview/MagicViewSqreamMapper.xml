@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.archiving.magicview.dao.sqream.MagicViewSqreamMapper">
+
+	<!-- /* 동적 SQL 실행(Sqream, 주의: ${sql} 직접 실행) */ -->
+	<select id="selectDynamicSql" resultType="java.util.LinkedHashMap" statementType="STATEMENT">
+		${sql}
+	</select>
+
+	<!-- /* ASIS 레이아웃 메타 조회(로그레벨/메시지ID) */ -->
+	<select id="selectAsisLayoutMeta" resultType="java.util.LinkedHashMap">
+		SELECT B.VERSION, B.MESSAGE_FIELD_ID, B.MESSAGE_FIELD_NAME, B.SORT_ORDER, B.DATA_LENGTH
+		FROM EFIL.TB_EF_IL_MM_MESSAGE A,
+		     EFIL.TB_EF_IL_MM_MESSAGE_FIELD B,
+		     EFIL.TB_EF_IL_MM_MESSAGE_VERSION C
+		WHERE A.MESSAGE_ID = B.MESSAGE_ID
+		  AND A.MESSAGE_ID = C.MESSAGE_ID
+		  AND B.VERSION = C.VERSION
+		  AND A.LOG_LEVEL = #{logLevel}
+		  AND A.MESSAGE_ID = #{messageId}
+		ORDER BY B.SORT_ORDER
+	</select>
+
+	<sql id="asisIlogWhere">
+		WHERE 1 = 1
+		<if test="ymdStart != null and ymdStart != '' and ymdEnd != null and ymdEnd != ''">
+			AND H.MESSAGE_SER_NO BETWEEN #{ymdStart} || '0000000000000000000000' AND #{ymdEnd} || '~~~~~~~~~~~~~~~~~~~~~~'
+		</if>
+		<if test="channelCode != null and channelCode != ''">
+			AND UPPER(H.CHANNEL_CODE) LIKE '%' || #{channelCode} || '%'
+		</if>
+		<if test="userId != null and userId != ''">
+			AND H.USER_ID LIKE '%' || #{userId} || '%'
+		</if>
+		<if test="trAcno != null and trAcno != ''">
+			AND H.TR_ACNO LIKE '%' || #{trAcno} || '%'
+		</if>
+		<if test="cusNo != null and cusNo != ''">
+			AND H.CUS_NO LIKE '%' || #{cusNo} || '%'
+		</if>
+		<if test="inAcno != null and inAcno != ''">
+			AND H.IN_ACNO LIKE '%' || #{inAcno} || '%'
+		</if>
+		<if test="ip != null and ip != ''">
+			AND H.IP LIKE '%' || #{ip} || '%'
+		</if>
+	</sql>
+
+	<!-- /* ASIS ILOG 헤더 건수 조회(조건 검색) */ -->
+	<select id="countAsisIlogHeader" resultType="int">
+		SELECT COUNT(1)
+		FROM EFIL.TB_EF_IL_LM_MESSAGE_LOG_T H
+		<include refid="asisIlogWhere"/>
+	</select>
+
+	<!-- /* ASIS ILOG 헤더 목록 조회(조건 검색) */ -->
+	<select id="selectAsisIlogHeader" resultType="java.util.LinkedHashMap">
+		SELECT H.TRX_DTIME, H.MESSAGE_SER_NO, H.TRX_TRACKING_NO, H.MESSAGE_ID, H.MESSAGE_NAME, H.USER_ID, H.TR_ACNO,
+		       H.IN_ACNO, H.CUS_NO, H.ERROR_CODE, H.IP, H.CHANNEL_CODE, H.SERVICE_ID
+		FROM EFIL.TB_EF_IL_LM_MESSAGE_LOG_T H
+		<include refid="asisIlogWhere"/>
+		ORDER BY H.SERVICE_ID, H.MESSAGE_SER_NO DESC
+	</select>
+
+	<!-- /* 동일 거래ID 상세 조회(ASIS) */ -->
+	<select id="selectAsisSameTranIdDetail" resultType="java.util.LinkedHashMap">
+		SELECT A.MESSAGE_SER_NO,
+		       A.TRX_TRACKING_NO,
+		       A.MESSAGE_ID,
+		       A.MESSAGE_NAME,
+		       A.CUST_REG_NO,
+		       A.USER_ID,
+		       A.TRX_DTIME,
+		       A.TR_ACNO,
+		       A.IN_ACNO,
+		       A.SRCH_ACNO,
+		       A.IP,
+		       A.ERROR_CODE,
+		       A.CHANNEL_CODE,
+		       B.MESSAGE_HEADER_DATA,
+		       B.MESSAGE_BODY_DATA,
+		       B.MESSAGE_BODY_DATA2,
+		       B.MESSAGE_BODY_DATA3,
+		       B.MESSAGE_BODY_DATA4,
+		       B.MESSAGE_BODY_DATA5,
+		       'A' AS LOG_LEVEL
+		FROM (SELECT * FROM EFIL.TB_EF_IL_LM_MESSAGE_LOG_T WHERE MESSAGE_SER_NO = #{messageSerNo}) A,
+		     (SELECT * FROM EFIL.TB_EF_IL_LM_MESSAGE_LOG_DATA_T WHERE MESSAGE_SER_NO = #{messageSerNo}) B
+		WHERE A.MESSAGE_SER_NO = B.MESSAGE_SER_NO
+		  AND A.LOG_DD = B.LOG_DD
+		  AND A.MESSAGE_SER_NO = #{messageSerNo}
+	</select>
+
+	<!-- /* ASIS SLOG 헤더 통계 조회 */ -->
+	<select id="selectAsisSlogHeader" resultType="java.util.LinkedHashMap">
+		SELECT H.SVC_ID,
+		       M.SVC_NM,
+		       SUM(H.NML_PRC_CN) AS NML_PRC_CN,
+		       SUM(H.ERR_PRC_CN) AS ERR_PRC_CN,
+		       SUM(H.TR_CN) AS TR_CN,
+		       SUM(H.PARTNER_CN) AS PARTNER_CN,
+		       SUM(H.OS_CN_01) AS OS1,
+		       SUM(H.OS_CN_02) AS OS2,
+		       SUM(H.OS_CN_03) AS OS3,
+		       SUM(H.OS_CN_04) AS OS4,
+		       SUM(H.OS_CN_05) AS OS5,
+		       SUM(H.OS_CN_06) AS OS6
+		FROM EFIL.TB_EF_IL_SM_SVC_STT H
+		LEFT OUTER JOIN EFIL.TB_EF_IL_EM_SVC_INF M
+		  ON (H.CUS_DS = M.CUS_DS AND H.MED_DS = M.MED_DS AND H.SVC_ID = M.SVC_ID)
+		<where>
+			<if test="trYmdStart != null and trYmdStart != ''">
+				AND M.FIRST_REGIST_DTIME &gt;= CAST(#{trYmdStart} AS TIMESTAMP)
+			</if>
+			<if test="trYmdEnd != null and trYmdEnd != ''">
+				AND M.FIRST_REGIST_DTIME &lt;= CAST(#{trYmdEnd} AS TIMESTAMP)
+			</if>
+			<if test="svcId != null and svcId != ''">
+				AND H.SVC_ID LIKE UPPER('%' || #{svcId} || '%')
+			</if>
+			<if test="locale != null and locale != ''">
+				AND H.LOCALE LIKE UPPER('%' || #{locale} || '%')
+			</if>
+			<if test="medDs != null and medDs != ''">
+				AND H.MED_DS LIKE UPPER('%' || #{medDs} || '%')
+			</if>
+		</where>
+		GROUP BY H.SVC_ID, M.SVC_NM
+	</select>
+
+	<sql id="slogHeaderWhere">
+		<if test="trYmdStart != null and trYmdStart != ''">
+			AND CREADTED_TIME &gt;= CAST(#{trYmdStart} AS TIMESTAMP)
+		</if>
+		<if test="trYmdEnd != null and trYmdEnd != ''">
+			AND CREADTED_TIME &lt; CAST(#{trYmdEnd} AS TIMESTAMP) + INTERVAL '1 minute'
+		</if>
+		<if test="serviceId != null and serviceId != ''">
+			AND SERVICE_ID LIKE '%' || #{serviceId} || '%'
+		</if>
+		<if test="serviceName != null and serviceName != ''">
+			AND SERVICE_NAME LIKE '%' || #{serviceName} || '%'
+		</if>
+		<if test="mediaCategoryCd != null and mediaCategoryCd != ''">
+			AND APPLICATION_GROUP_ID = #{mediaCategoryCd}
+		</if>
+	</sql>
+
+	<!-- /* SLOG 헤더 집계 조회(서버/기간/서비스 조건) */ -->
+	<select id="selectSlogHeader" resultType="java.util.LinkedHashMap">
+		WITH TRXALL AS (
+			<choose>
+				<when test='serverValue.equals("bl")'>
+					SELECT SERVICE_ID, SERVICE_NAME, APPLICATION_GROUP_ID, SUCCESS_YN, SUCCESS_COUNT, FAIL_COUNT, OS1, OS2, OS3, OS4, OS5, OS6
+					FROM EFBL.TB_EF_BL_SVC
+					WHERE 1=1
+					<include refid="slogHeaderWhere"/>
+					UNION ALL
+					SELECT SERVICE_ID, SERVICE_NAME, APPLICATION_GROUP_ID, SUCCESS_YN, SUCCESS_COUNT, FAIL_COUNT, OS1, OS2, OS3, OS4, OS5, OS6
+					FROM EFBL.TB_EF_BL_SVC_D
+					WHERE 1=1
+					<include refid="slogHeaderWhere"/>
+				</when>
+				<otherwise>
+					SELECT SERVICE_ID, SERVICE_NAME, APPLICATION_GROUP_ID, SUCCESS_YN, SUCCESS_COUNT, FAIL_COUNT, OS1, OS2, OS3, OS4, OS5, OS6
+					FROM DFSL.TB_DF_SL_SVC
+					WHERE 1=1
+					<include refid="slogHeaderWhere"/>
+					UNION ALL
+					SELECT SERVICE_ID, SERVICE_NAME, APPLICATION_GROUP_ID, SUCCESS_YN, SUCCESS_COUNT, FAIL_COUNT, OS1, OS2, OS3, OS4, OS5, OS6
+					FROM DFSL.TB_DF_SL_SVC_D
+					WHERE 1=1
+					<include refid="slogHeaderWhere"/>
+				</otherwise>
+			</choose>
+		)
+		SELECT TRXALL.SERVICE_ID, TRXALL.SERVICE_NAME, TRXALL.APPLICATION_GROUP_ID,
+		       COUNT(TRXALL.SUCCESS_YN) AS SUCCESS_YN,
+		       SUM(TRXALL.SUCCESS_COUNT) AS SUCCESS_COUNT,
+		       SUM(TRXALL.FAIL_COUNT) AS FAIL_COUNT,
+		       SUM(TRXALL.OS1) AS OS1, SUM(TRXALL.OS2) AS OS2, SUM(TRXALL.OS3) AS OS3,
+		       SUM(TRXALL.OS4) AS OS4, SUM(TRXALL.OS5) AS OS5, SUM(TRXALL.OS6) AS OS6
+		FROM TRXALL
+		GROUP BY TRXALL.SERVICE_ID, TRXALL.SERVICE_NAME, TRXALL.APPLICATION_GROUP_ID
+	</select>
+
+	<sql id="ilogIpBandWhere">
+		<if test="trYmdStart != null and trYmdStart != ''">
+			AND H.TRX_DTIME &gt;= CAST(#{trYmdStart} AS TIMESTAMP)
+		</if>
+		<if test="trYmdEnd != null and trYmdEnd != ''">
+			AND H.TRX_DTIME &lt; CAST(#{trYmdEnd} AS TIMESTAMP) + INTERVAL '1 minute'
+		</if>
+		<if test="ipStart != null and ipStart != ''">
+			AND H.IP BETWEEN #{ipStart} AND #{ipEnd}
+		</if>
+	</sql>
+
+	<!-- /* ILOG IP 대역별 헤더 조회 */ -->
+	<select id="selectIlogIpBandHeader" resultType="java.util.LinkedHashMap">
+		<choose>
+			<when test='serverValue.equals("bl")'>
+				WITH TRXALL AS (
+					SELECT H.CORP_TYPE AS CORP,H.MESSAGE_SER_NO,H.REQ_RES_TYPE,H.TRX_TRACKING_NO,H.USER_ID,H.CUST_REG_NO,H.MESSAGE_ID,H.TRX_DTIME,H.ERROR_CODE,H.LOG_CR_INFO,H.OS,H.IP,H.SCRN_ID,H.MAC,H.PROFILE,H.TEL_NO,H.TR_ACNO,H.IN_ACNO
+					FROM EFBL.TB_EF_BL_MESSAGE_LOG H
+					WHERE 1=1
+					<include refid="ilogIpBandWhere"/>
+					UNION ALL
+					SELECT H.CORP_TYPE AS CORP,H.MESSAGE_SER_NO,H.REQ_RES_TYPE,H.TRX_TRACKING_NO,H.USER_ID,H.CUST_REG_NO,H.MESSAGE_ID,H.TRX_DTIME,H.ERROR_CODE,H.LOG_CR_INFO,H.OS,H.IP,H.SCRN_ID,H.MAC,H.PROFILE,H.TEL_NO,H.TR_ACNO,H.IN_ACNO
+					FROM EFBL.TB_DF_SL_MESSAGE_LOG H
+					WHERE 1=1
+					<include refid="ilogIpBandWhere"/>
+					UNION ALL
+					SELECT H.CORP_TYPE AS CORP,H.MESSAGE_SER_NO,H.REQ_RES_TYPE,H.TRX_TRACKING_NO,H.USER_ID,H.CUST_REG_NO,H.MESSAGE_ID,H.TRX_DTIME,H.ERROR_CODE,H.LOG_CR_INFO,H.OS,H.IP,H.SCRN_ID,H.MAC,H.PROFILE,H.TEL_NO,H.TR_ACNO,H.IN_ACNO
+					FROM EFBL.TB_EF_DF_MESSAGE_LOG H
+					WHERE 1=1
+					<include refid="ilogIpBandWhere"/>
+				)
+				SELECT MAX(M.COM_TGRM_VER_NO) as COM_TGRM_VER_NO, TRXALL.CORP, TRXALL.MESSAGE_SER_NO, TRXALL.REQ_RES_TYPE, TRXALL.TRX_TRACKING_NO, TRXALL.USER_ID, TRXALL.CUST_REG_NO,
+				       TRXALL.MESSAGE_ID, M.COM_IF_NM, SUBSTRING(CAST(TRXALL.TRX_DTIME AS TEXT),0,20) AS TRX_DTIME, TRXALL.ERROR_CODE, TRXALL.LOG_CR_INFO, TRXALL.OS, TRXALL.IP, TRXALL.SCRN_ID, TRXALL.MAC, TRXALL.PROFILE, TRXALL.TEL_NO, TRXALL.TR_ACNO, TRXALL.IN_ACNO
+				FROM TRXALL
+				LEFT OUTER JOIN EFBL.TB_V4_FEP_JOB_INF M ON (M.COM_IF_ID = TRXALL.MESSAGE_ID AND M.COM_LS_UPD_DTM &lt;= TRXALL.TRX_DTIME)
+				GROUP BY TRXALL.CORP, TRXALL.MESSAGE_SER_NO, TRXALL.REQ_RES_TYPE, TRXALL.TRX_TRACKING_NO, TRXALL.USER_ID, TRXALL.CUST_REG_NO, TRXALL.MESSAGE_ID, M.COM_IF_NM, TRXALL.TRX_DTIME,
+				         TRXALL.ERROR_CODE, TRXALL.LOG_CR_INFO, TRXALL.OS, TRXALL.IP, TRXALL.SCRN_ID, TRXALL.MAC, TRXALL.PROFILE, TRXALL.TEL_NO, TRXALL.TR_ACNO, TRXALL.IN_ACNO
+				ORDER BY TRXALL.TRX_DTIME DESC
+			</when>
+			<otherwise>
+				SELECT MAX(M.COM_TGRM_VER_NO) as COM_TGRM_VER_NO, H.CORP_TYPE AS CORP,H.MESSAGE_SER_NO,H.REQ_RES_TYPE,H.TRX_TRACKING_NO,H.USER_ID,H.CUST_REG_NO,H.MESSAGE_ID,M.COM_IF_NM,H.TRX_DTIME,H.ERROR_CODE,H.LOG_CR_INFO,H.OS,H.IP,H.SCRN_ID,H.MAC,H.PROFILE,H.TEL_NO,H.TR_ACNO,H.IN_ACNO
+				FROM DFSL.TB_DF_SL_MESSAGE_LOG H
+				LEFT OUTER JOIN DFSL.TB_V4_FEP_JOB_INF M ON (M.COM_IF_ID = H.MESSAGE_ID AND M.COM_LS_UPD_DTM &lt;= H.TRX_DTIME)
+				WHERE 1=1
+				<include refid="ilogIpBandWhere"/>
+				GROUP BY H.CORP_TYPE,H.MESSAGE_SER_NO,H.REQ_RES_TYPE,H.TRX_TRACKING_NO,H.USER_ID,H.CUST_REG_NO,H.MESSAGE_ID,M.COM_IF_NM,H.TRX_DTIME,H.ERROR_CODE,H.LOG_CR_INFO,H.OS,H.IP,H.SCRN_ID,H.MAC,H.PROFILE,H.TEL_NO,H.TR_ACNO,H.IN_ACNO
+				ORDER BY H.TRX_DTIME
+			</otherwise>
+		</choose>
+	</select>
+
+	<sql id="ilogHeaderWhereH">
+		<if test="trYmdStart != null and trYmdStart != ''">AND H.TRX_DTIME &gt;= CAST(#{trYmdStart} AS TIMESTAMP)</if>
+		<if test="trYmdEnd != null and trYmdEnd != ''">AND H.TRX_DTIME &lt; CAST(#{trYmdEnd} AS TIMESTAMP) + INTERVAL '1 minute'</if>
+		<if test="logCrInfo != null and logCrInfo != ''">AND H.LOG_CR_INFO LIKE UPPER('%' || #{logCrInfo} || '%')</if>
+		<if test="messageSerNo != null and messageSerNo != ''">AND H.MESSAGE_SER_NO LIKE UPPER('%' || #{messageSerNo} || '%')</if>
+		<if test="userId != null and userId != ''">AND H.USER_ID LIKE UPPER('%' || #{userId} || '%')</if>
+		<if test="regCustNo != null and regCustNo != ''">AND H.CUST_REG_NO LIKE UPPER('%' || #{regCustNo} || '%')</if>
+		<if test="inIp != null and inIp != ''">AND H.IP LIKE UPPER('%' || #{inIp} || '%')</if>
+		<if test="messageId != null and messageId != ''">AND H.MESSAGE_ID LIKE UPPER('%' || #{messageId} || '%')</if>
+		<if test="mac != null and mac != ''">AND H.MAC LIKE UPPER('%' || #{mac} || '%')</if>
+		<if test="trAcno != null and trAcno != ''">AND H.TR_ACNO LIKE '%' || #{trAcno} || '%'</if>
+		<if test="inAcno != null and inAcno != ''">AND H.IN_ACNO LIKE '%' || #{inAcno} || '%'</if>
+		<if test="telNo != null and telNo != ''">AND H.TEL_NO LIKE '%' || #{telNo} || '%'</if>
+		<if test="scrnId != null and scrnId != ''">AND H.SCRN_ID LIKE UPPER('%' || #{scrnId} || '%')</if>
+	</sql>
+
+	<!-- /* ILOG 헤더 조회(조건 검색) */ -->
+	<select id="selectIlogHeader" resultType="java.util.LinkedHashMap">
+		<choose>
+			<when test='serverValue.equals("bl")'>
+				WITH TRXALL AS (
+					<choose>
+						<when test='corpValue.equals("efblview")'>
+							SELECT H.CORP_TYPE AS CORP,H.MESSAGE_SER_NO,H.REQ_RES_TYPE,H.TRX_TRACKING_NO,H.USER_ID,H.CUST_REG_NO,H.MESSAGE_ID,H.TRX_DTIME,H.ERROR_CODE,H.LOG_CR_INFO,H.OS,H.IP,H.SCRN_ID,H.MAC,H.PROFILE,H.TEL_NO,H.TR_ACNO,H.IN_ACNO
+							FROM EFBL.TB_EF_BL_MESSAGE_LOG H WHERE 1=1 <include refid="ilogHeaderWhereH"/>
+							UNION ALL
+							SELECT H.CORP_TYPE AS CORP,H.MESSAGE_SER_NO,H.REQ_RES_TYPE,H.TRX_TRACKING_NO,H.USER_ID,H.CUST_REG_NO,H.MESSAGE_ID,H.TRX_DTIME,H.ERROR_CODE,H.LOG_CR_INFO,H.OS,H.IP,H.SCRN_ID,H.MAC,H.PROFILE,H.TEL_NO,H.TR_ACNO,H.IN_ACNO
+							FROM EFBL.TB_EF_BL_MESSAGE_LOG_D H WHERE 1=1 <include refid="ilogHeaderWhereH"/>
+						</when>
+						<when test='corpValue.equals("efsbview")'>
+							SELECT H.CORP_TYPE AS CORP,H.MESSAGE_SER_NO,H.REQ_RES_TYPE,H.TRX_TRACKING_NO,H.USER_ID,H.CUST_REG_NO,H.MESSAGE_ID,H.TRX_DTIME,H.ERROR_CODE,H.LOG_CR_INFO,H.OS,H.IP,H.SCRN_ID,H.MAC,H.PROFILE,H.TEL_NO,H.TR_ACNO,H.IN_ACNO
+							FROM EFBL.TB_DF_SL_MESSAGE_LOG H WHERE 1=1 <include refid="ilogHeaderWhereH"/>
+							UNION ALL
+							SELECT H.CORP_TYPE AS CORP,H.MESSAGE_SER_NO,H.REQ_RES_TYPE,H.TRX_TRACKING_NO,H.USER_ID,H.CUST_REG_NO,H.MESSAGE_ID,H.TRX_DTIME,H.ERROR_CODE,H.LOG_CR_INFO,H.OS,H.IP,H.SCRN_ID,H.MAC,H.PROFILE,H.TEL_NO,H.TR_ACNO,H.IN_ACNO
+							FROM EFBL.TB_DF_SL_MESSAGE_LOG_D H WHERE 1=1 <include refid="ilogHeaderWhereH"/>
+						</when>
+						<otherwise>
+							SELECT H.CORP_TYPE AS CORP,H.MESSAGE_SER_NO,H.REQ_RES_TYPE,H.TRX_TRACKING_NO,H.USER_ID,H.CUST_REG_NO,H.MESSAGE_ID,H.TRX_DTIME,H.ERROR_CODE,H.LOG_CR_INFO,H.OS,H.IP,H.SCRN_ID,H.MAC,H.PROFILE,H.TEL_NO,H.TR_ACNO,H.IN_ACNO
+							FROM EFBL.TB_EF_DF_MESSAGE_LOG H WHERE 1=1 <include refid="ilogHeaderWhereH"/>
+							UNION ALL
+							SELECT H.CORP_TYPE AS CORP,H.MESSAGE_SER_NO,H.REQ_RES_TYPE,H.TRX_TRACKING_NO,H.USER_ID,H.CUST_REG_NO,H.MESSAGE_ID,H.TRX_DTIME,H.ERROR_CODE,H.LOG_CR_INFO,H.OS,H.IP,H.SCRN_ID,H.MAC,H.PROFILE,H.TEL_NO,H.TR_ACNO,H.IN_ACNO
+							FROM EFBL.TB_EF_DF_MESSAGE_LOG_D H WHERE 1=1 <include refid="ilogHeaderWhereH"/>
+						</otherwise>
+					</choose>
+					UNION ALL
+					SELECT D.CORP_TYPE AS CORP,D.MESSAGE_SER_NO,D.REQ_RES_TYPE,D.TRX_TRACKING_NO,D.USER_ID,D.CUST_REG_NO,D.MESSAGE_ID,D.TRX_DTIME,D.ERROR_CODE,D.LOG_CR_INFO,D.OS,D.IP,D.SCRN_ID,D.MAC,D.PROFILE,D.TEL_NO,D.TR_ACNO,D.IN_ACNO
+					FROM EFBL.TB_EF_DF_MESSAGE_LOG D
+					WHERE 1=1
+					<if test="trYmdStart != null and trYmdStart != ''">AND D.TRX_DTIME &gt;= CAST(#{trYmdStart} AS TIMESTAMP)</if>
+					<if test="trYmdEnd != null and trYmdEnd != ''">AND D.TRX_DTIME &lt; CAST(#{trYmdEnd} AS TIMESTAMP) + INTERVAL '1 minute'</if>
+					<if test="logCrInfo != null and logCrInfo != ''">AND D.LOG_CR_INFO LIKE UPPER('%' || #{logCrInfo} || '%')</if>
+					<if test="messageSerNo != null and messageSerNo != ''">AND D.MESSAGE_SER_NO LIKE UPPER('%' || #{messageSerNo} || '%')</if>
+					<if test="userId != null and userId != ''">AND D.USER_ID LIKE UPPER('%' || #{userId} || '%')</if>
+					<if test="regCustNo != null and regCustNo != ''">AND D.CUST_REG_NO LIKE UPPER('%' || #{regCustNo} || '%')</if>
+					<if test="inIp != null and inIp != ''">AND D.IP LIKE UPPER('%' || #{inIp} || '%')</if>
+					<if test="messageId != null and messageId != ''">AND D.MESSAGE_ID LIKE UPPER('%' || #{messageId} || '%')</if>
+					<if test="mac != null and mac != ''">AND D.MAC LIKE UPPER('%' || #{mac} || '%')</if>
+					<if test="trAcno != null and trAcno != ''">AND D.TR_ACNO LIKE '%' || #{trAcno} || '%'</if>
+					<if test="inAcno != null and inAcno != ''">AND D.IN_ACNO LIKE '%' || #{inAcno} || '%'</if>
+					<if test="telNo != null and telNo != ''">AND D.TEL_NO LIKE '%' || #{telNo} || '%'</if>
+					<if test="scrnId != null and scrnId != ''">AND D.SCRN_ID LIKE UPPER('%' || #{scrnId} || '%')</if>
+					UNION ALL
+					SELECT D.CORP_TYPE AS CORP,D.MESSAGE_SER_NO,D.REQ_RES_TYPE,D.TRX_TRACKING_NO,D.USER_ID,D.CUST_REG_NO,D.MESSAGE_ID,D.TRX_DTIME,D.ERROR_CODE,D.LOG_CR_INFO,D.OS,D.IP,D.SCRN_ID,D.MAC,D.PROFILE,D.TEL_NO,D.TR_ACNO,D.IN_ACNO
+					FROM EFBL.TB_EF_DF_MESSAGE_LOG_D D
+					WHERE 1=1
+					<if test="trYmdStart != null and trYmdStart != ''">AND D.TRX_DTIME &gt;= CAST(#{trYmdStart} AS TIMESTAMP)</if>
+					<if test="trYmdEnd != null and trYmdEnd != ''">AND D.TRX_DTIME &lt; CAST(#{trYmdEnd} AS TIMESTAMP) + INTERVAL '1 minute'</if>
+					<if test="logCrInfo != null and logCrInfo != ''">AND D.LOG_CR_INFO LIKE UPPER('%' || #{logCrInfo} || '%')</if>
+					<if test="messageSerNo != null and messageSerNo != ''">AND D.MESSAGE_SER_NO LIKE UPPER('%' || #{messageSerNo} || '%')</if>
+					<if test="userId != null and userId != ''">AND D.USER_ID LIKE UPPER('%' || #{userId} || '%')</if>
+					<if test="regCustNo != null and regCustNo != ''">AND D.CUST_REG_NO LIKE UPPER('%' || #{regCustNo} || '%')</if>
+					<if test="inIp != null and inIp != ''">AND D.IP LIKE UPPER('%' || #{inIp} || '%')</if>
+					<if test="messageId != null and messageId != ''">AND D.MESSAGE_ID LIKE UPPER('%' || #{messageId} || '%')</if>
+					<if test="mac != null and mac != ''">AND D.MAC LIKE UPPER('%' || #{mac} || '%')</if>
+					<if test="trAcno != null and trAcno != ''">AND D.TR_ACNO LIKE '%' || #{trAcno} || '%'</if>
+					<if test="inAcno != null and inAcno != ''">AND D.IN_ACNO LIKE '%' || #{inAcno} || '%'</if>
+					<if test="telNo != null and telNo != ''">AND D.TEL_NO LIKE '%' || #{telNo} || '%'</if>
+					<if test="scrnId != null and scrnId != ''">AND D.SCRN_ID LIKE UPPER('%' || #{scrnId} || '%')</if>
+				)
+				SELECT MAX(M.COM_TGRM_VER_NO) as COM_TGRM_VER_NO, TRXALL.CORP, TRXALL.MESSAGE_SER_NO, TRXALL.REQ_RES_TYPE, TRXALL.TRX_TRACKING_NO, TRXALL.USER_ID, TRXALL.CUST_REG_NO,
+				       TRXALL.MESSAGE_ID, M.COM_IF_NM, SUBSTRING(CAST(TRXALL.TRX_DTIME AS TEXT),0,20) AS TRX_DTIME, TRXALL.ERROR_CODE, TRXALL.LOG_CR_INFO, TRXALL.OS, TRXALL.IP, TRXALL.SCRN_ID, TRXALL.MAC, TRXALL.PROFILE, TRXALL.TEL_NO, TRXALL.TR_ACNO, TRXALL.IN_ACNO
+				FROM TRXALL
+				LEFT OUTER JOIN EFBL.TB_V4_FEP_JOB_INF M ON (M.COM_IF_ID = TRXALL.MESSAGE_ID AND M.COM_LS_UPD_DTM &lt;= TRXALL.TRX_DTIME)
+				GROUP BY TRXALL.CORP, TRXALL.MESSAGE_SER_NO, TRXALL.REQ_RES_TYPE, TRXALL.TRX_TRACKING_NO, TRXALL.USER_ID, TRXALL.CUST_REG_NO, TRXALL.MESSAGE_ID, M.COM_IF_NM, TRXALL.TRX_DTIME,
+				         TRXALL.ERROR_CODE, TRXALL.LOG_CR_INFO, TRXALL.OS, TRXALL.IP, TRXALL.SCRN_ID, TRXALL.MAC, TRXALL.PROFILE, TRXALL.TEL_NO, TRXALL.TR_ACNO, TRXALL.IN_ACNO
+				ORDER BY TRXALL.TRX_DTIME DESC
+			</when>
+			<otherwise>
+				SELECT MAX(M.COM_TGRM_VER_NO) as COM_TGRM_VER_NO, H.CORP_TYPE AS CORP,H.MESSAGE_SER_NO,H.REQ_RES_TYPE,H.TRX_TRACKING_NO,H.USER_ID,H.CUST_REG_NO,H.MESSAGE_ID,M.COM_IF_NM,H.TRX_DTIME,H.ERROR_CODE,H.LOG_CR_INFO,H.OS,H.IP,H.SCRN_ID,H.MAC,H.PROFILE,H.TEL_NO,H.TR_ACNO,H.IN_ACNO
+				FROM DFSL.TB_DF_SL_MESSAGE_LOG H
+				LEFT OUTER JOIN DFSL.TB_V4_FEP_JOB_INF M ON (M.COM_IF_ID = H.MESSAGE_ID AND M.COM_LS_UPD_DTM &lt;= H.TRX_DTIME)
+				WHERE 1=1
+				<include refid="ilogHeaderWhereH"/>
+				GROUP BY H.CORP_TYPE,H.MESSAGE_SER_NO,H.REQ_RES_TYPE,H.TRX_TRACKING_NO,H.USER_ID,H.CUST_REG_NO,H.MESSAGE_ID,M.COM_IF_NM,H.TRX_DTIME,H.ERROR_CODE,H.LOG_CR_INFO,H.OS,H.IP,H.SCRN_ID,H.MAC,H.PROFILE,H.TEL_NO,H.TR_ACNO,H.IN_ACNO
+				UNION ALL
+				SELECT MAX(M.COM_TGRM_VER_NO) as COM_TGRM_VER_NO, H.CORP_TYPE AS CORP,H.MESSAGE_SER_NO,H.REQ_RES_TYPE,H.TRX_TRACKING_NO,H.USER_ID,H.CUST_REG_NO,H.MESSAGE_ID,M.COM_IF_NM,H.TRX_DTIME,H.ERROR_CODE,H.LOG_CR_INFO,H.OS,H.IP,H.SCRN_ID,H.MAC,H.PROFILE,H.TEL_NO,H.TR_ACNO,H.IN_ACNO
+				FROM DFSL.TB_DF_SL_MESSAGE_LOG_D H
+				LEFT OUTER JOIN DFSL.TB_V4_FEP_JOB_INF M ON (M.COM_IF_ID = H.MESSAGE_ID AND M.COM_LS_UPD_DTM &lt;= H.TRX_DTIME)
+				WHERE 1=1
+				<include refid="ilogHeaderWhereH"/>
+				GROUP BY H.CORP_TYPE,H.MESSAGE_SER_NO,H.REQ_RES_TYPE,H.TRX_TRACKING_NO,H.USER_ID,H.CUST_REG_NO,H.MESSAGE_ID,M.COM_IF_NM,H.TRX_DTIME,H.ERROR_CODE,H.LOG_CR_INFO,H.OS,H.IP,H.SCRN_ID,H.MAC,H.PROFILE,H.TEL_NO,H.TR_ACNO,H.IN_ACNO
+				ORDER BY TRX_DTIME
+			</otherwise>
+		</choose>
+	</select>
+
+	<sql id="sameTranWhereH">
+		<if test="trYmdStart != null and trYmdStart != ''">AND H.TRX_DTIME &gt;= CAST(#{trYmdStart} AS TIMESTAMP)</if>
+		<if test="trYmdEnd != null and trYmdEnd != ''">AND H.TRX_DTIME &lt; CAST(#{trYmdEnd} AS TIMESTAMP) + INTERVAL '1 minute'</if>
+		<if test="messageSerNo != null and messageSerNo != ''">AND H.MESSAGE_SER_NO = #{messageSerNo}</if>
+	</sql>
+
+	<!-- /* 동일 거래ID 데이터 조회 */ -->
+	<select id="selectSameTranIdData" resultType="java.util.LinkedHashMap">
+		<choose>
+			<when test='serverValue.equals("bl")'>
+				<choose>
+					<when test='corpValue.equals("efblview") and detailCorpValue.equals("1")'>
+						SELECT H.MESSAGE_SER_NO, H.REQ_RES_TYPE, SUBSTRING(CAST(H.TRX_DTIME AS TEXT),0,20) AS TRX_DTIME, H.TRX_TRACKING_NO, H.MESSAGE_ID, H.USER_ID, H.CUST_REG_NO, H.IP, H.MESSAGE_RES, D.MESSAGE_DATA
+						FROM EFBL.TB_EF_BL_MESSAGE_LOG H LEFT OUTER JOIN EFBL.TB_EF_BL_MESSAGE_LOG_DATA D ON (H.MESSAGE_SER_NO = D.MESSAGE_SER_NO AND H.TRX_TRACKING_NO = D.TRX_TRACKING_NO AND H.TRX_DTIME = D.TRX_DTIME)
+						WHERE 1=1 <include refid="sameTranWhereH"/>
+						UNION ALL
+						SELECT H.MESSAGE_SER_NO, H.REQ_RES_TYPE, SUBSTRING(CAST(H.TRX_DTIME AS TEXT),0,20) AS TRX_DTIME, H.TRX_TRACKING_NO, H.MESSAGE_ID, H.USER_ID, H.CUST_REG_NO, H.IP, H.MESSAGE_RES, D.MESSAGE_DATA
+						FROM EFBL.TB_EF_BL_MESSAGE_LOG_D H LEFT OUTER JOIN EFBL.TB_EF_BL_MESSAGE_LOG_DATA_D D ON (H.MESSAGE_SER_NO = D.MESSAGE_SER_NO AND H.TRX_TRACKING_NO = D.TRX_TRACKING_NO AND H.TRX_DTIME = D.TRX_DTIME)
+						WHERE 1=1 <include refid="sameTranWhereH"/>
+					</when>
+					<when test='corpValue.equals("efsbview") and detailCorpValue.equals("2")'>
+						SELECT H.MESSAGE_SER_NO, H.REQ_RES_TYPE, SUBSTRING(CAST(H.TRX_DTIME AS TEXT),0,20) AS TRX_DTIME, H.TRX_TRACKING_NO, H.MESSAGE_ID, H.USER_ID, H.CUST_REG_NO, H.IP, H.MESSAGE_RES, D.MESSAGE_DATA
+						FROM EFBL.TB_DF_SL_MESSAGE_LOG H LEFT OUTER JOIN EFBL.TB_DF_SL_MESSAGE_LOG_DATA D ON (H.MESSAGE_SER_NO = D.MESSAGE_SER_NO AND H.TRX_TRACKING_NO = D.TRX_TRACKING_NO AND H.TRX_DTIME = D.TRX_DTIME)
+						WHERE 1=1 <include refid="sameTranWhereH"/>
+						UNION ALL
+						SELECT H.MESSAGE_SER_NO, H.REQ_RES_TYPE, SUBSTRING(CAST(H.TRX_DTIME AS TEXT),0,20) AS TRX_DTIME, H.TRX_TRACKING_NO, H.MESSAGE_ID, H.USER_ID, H.CUST_REG_NO, H.IP, H.MESSAGE_RES, D.MESSAGE_DATA
+						FROM EFBL.TB_DF_SL_MESSAGE_LOG_D H LEFT OUTER JOIN EFBL.TB_DF_SL_MESSAGE_LOG_DATA_D D ON (H.MESSAGE_SER_NO = D.MESSAGE_SER_NO AND H.TRX_TRACKING_NO = D.TRX_TRACKING_NO AND H.TRX_DTIME = D.TRX_DTIME)
+						WHERE 1=1 <include refid="sameTranWhereH"/>
+					</when>
+					<otherwise>
+						SELECT H.MESSAGE_SER_NO, H.REQ_RES_TYPE, SUBSTRING(CAST(H.TRX_DTIME AS TEXT),0,20) AS TRX_DTIME, H.TRX_TRACKING_NO, H.MESSAGE_ID, H.USER_ID, H.CUST_REG_NO, H.IP, H.MESSAGE_RES, D.MESSAGE_DATA
+						FROM EFBL.TB_EF_DF_MESSAGE_LOG H LEFT OUTER JOIN EFBL.TB_EF_DF_MESSAGE_LOG_DATA D ON (H.MESSAGE_SER_NO = D.MESSAGE_SER_NO AND H.TRX_TRACKING_NO = D.TRX_TRACKING_NO AND H.TRX_DTIME = D.TRX_DTIME)
+						WHERE 1=1 and 1=1 <include refid="sameTranWhereH"/>
+						UNION ALL
+						SELECT H.MESSAGE_SER_NO, H.REQ_RES_TYPE, SUBSTRING(CAST(H.TRX_DTIME AS TEXT),0,20) AS TRX_DTIME, H.TRX_TRACKING_NO, H.MESSAGE_ID, H.USER_ID, H.CUST_REG_NO, H.IP, H.MESSAGE_RES, D.MESSAGE_DATA
+						FROM EFBL.TB_EF_DF_MESSAGE_LOG_D H LEFT OUTER JOIN EFBL.TB_EF_DF_MESSAGE_LOG_DATA_D D ON (H.MESSAGE_SER_NO = D.MESSAGE_SER_NO AND H.TRX_TRACKING_NO = D.TRX_TRACKING_NO AND H.TRX_DTIME = D.TRX_DTIME)
+						WHERE 1=1 <include refid="sameTranWhereH"/>
+					</otherwise>
+				</choose>
+			</when>
+			<otherwise>
+				SELECT H.MESSAGE_SER_NO, H.REQ_RES_TYPE, SUBSTRING(CAST(H.TRX_DTIME AS TEXT),0,20) AS TRX_DTIME, H.TRX_TRACKING_NO, H.MESSAGE_ID, H.USER_ID, H.CUST_REG_NO, H.IP, H.MESSAGE_RES, D.MESSAGE_DATA
+				FROM DFSL.TB_DF_SL_MESSAGE_LOG H LEFT OUTER JOIN DFSL.TB_DF_SL_MESSAGE_LOG_DATA D ON (H.MESSAGE_SER_NO = D.MESSAGE_SER_NO AND H.TRX_TRACKING_NO = D.TRX_TRACKING_NO AND H.TRX_DTIME = D.TRX_DTIME)
+				WHERE 1=1 <include refid="sameTranWhereH"/>
+				UNION ALL
+				SELECT H.MESSAGE_SER_NO, H.REQ_RES_TYPE, SUBSTRING(CAST(H.TRX_DTIME AS TEXT),0,20) AS TRX_DTIME, H.TRX_TRACKING_NO, H.MESSAGE_ID, H.USER_ID, H.CUST_REG_NO, H.IP, H.MESSAGE_RES, D.MESSAGE_DATA
+				FROM DFSL.TB_DF_SL_MESSAGE_LOG_D H LEFT OUTER JOIN DFSL.TB_DF_SL_MESSAGE_LOG_DATA_D D ON (H.MESSAGE_SER_NO = D.MESSAGE_SER_NO AND H.TRX_TRACKING_NO = D.TRX_TRACKING_NO AND H.TRX_DTIME = D.TRX_DTIME)
+				WHERE 1=1 <include refid="sameTranWhereH"/>
+			</otherwise>
+		</choose>
+		LIMIT 1000
+	</select>
+
+	<!-- /* 전문 레이아웃 메타 조회(대표전문ID 기준) */ -->
+	<select id="selectLayoutMeta" resultType="java.util.LinkedHashMap">
+		SELECT MAX(CHG_DTM) AS CHG_DTM, MAX(REG_DTM) AS REG_DTM, TGRM_SNO, REPR_TGRM_ID, TGRM_NM_ENG, TGRM_NM_KOR, ETC_FRWD_YN1, MSK_PTTRN
+		FROM
+		<choose>
+			<when test='serverValue.equals("bl")'>EFBL.TB_V4_INTG_TGRM_SHR</when>
+			<otherwise>DFSL.TB_V4_INTG_TGRM_SHR</otherwise>
+		</choose>
+		WHERE REPR_TGRM_ID = #{messageId}
+		<if test="trxDtime != null and trxDtime != ''">AND CHG_DTM &lt;= #{trxDtime}::timestamp</if>
+		<if test='reqResType.equals("1")'>AND IO_DIS_CD = '100'</if>
+		<if test='reqResType.equals("4")'>AND IO_DIS_CD = '400'</if>
+		GROUP BY TGRM_SNO, REPR_TGRM_ID, TGRM_NM_KOR, TGRM_NM_ENG, ETC_FRWD_YN1, MSK_PTTRN
+	</select>
+
+	<!-- /* 계좌 링크 포함 전체 레이아웃 조회 */ -->
+	<select id="selectAllAccountLayout" resultType="java.util.LinkedHashMap">
+		SELECT TGRM_NM_ENG, MAX(CHG_DTM) AS CHG_DTM, MAX(REG_DTM) AS REG_DTM, TGRM_SNO, REPR_TGRM_ID, TGRM_NM_KOR, ETC_FRWD_YN1, MSK_PTTRN
+		FROM
+		<choose>
+			<when test='serverValue.equals("bl")'>EFBL.TB_V4_INTG_TGRM_SHR</when>
+			<otherwise>DFSL.TB_V4_INTG_TGRM_SHR</otherwise>
+		</choose>
+		WHERE REPR_TGRM_ID IN (
+			SELECT B.TGRM_NM_ENG
+			FROM
+			<choose>
+				<when test='serverValue.equals("bl")'>EFBL.TB_V4_INTG_TGRM_SHR B</when>
+				<otherwise>DFSL.TB_V4_INTG_TGRM_SHR B</otherwise>
+			</choose>
+			WHERE B.REPR_TGRM_ID = #{messageId}
+			  AND B.FLD_TYP = 'link'
+			  AND B.IO_DIS_CD = '400'
+		)
+		<if test="trxDtime != null and trxDtime != ''">AND CHG_DTM &lt;= #{trxDtime}::timestamp</if>
+		<if test='reqResType.equals("1")'>AND IO_DIS_CD = '100'</if>
+		<if test='reqResType.equals("4")'>AND IO_DIS_CD = '400'</if>
+		GROUP BY TGRM_SNO, REPR_TGRM_ID, TGRM_NM_KOR, TGRM_NM_ENG, ETC_FRWD_YN1, MSK_PTTRN
+	</select>
+
+	<!-- /* 더미 응답 전문 레이아웃 조회 */ -->
+	<select id="selectDummyResLayout" resultType="java.util.LinkedHashMap">
+		WITH MAX_VER AS (
+			SELECT MAX(tgrm_ver_no) AS MAX_VER
+			FROM
+			<choose>
+				<when test='serverValue.equals("bl")'>EFBL.TB_V4_INTG_TGRM_SHR</when>
+				<otherwise>DFSL.TB_V4_INTG_TGRM_SHR</otherwise>
+			</choose>
+			WHERE REPR_TGRM_ID = #{messageRes}
+			<if test="trxDtime != null and trxDtime != ''">AND CHG_DTM &lt;= #{trxDtime}::timestamp</if>
+			<if test='reqResType.equals("1")'>AND IO_DIS_CD = '100'</if>
+			<if test='reqResType.equals("4")'>AND IO_DIS_CD = '400'</if>
+		)
+		SELECT TGRM_NM_ENG, MAX(CHG_DTM) AS CHG_DTM, MAX(REG_DTM) AS REG_DTM, TGRM_SNO, REPR_TGRM_ID, TGRM_NM_KOR, ETC_FRWD_YN1, MSK_PTTRN
+		FROM
+		<choose>
+			<when test='serverValue.equals("bl")'>EFBL.TB_V4_INTG_TGRM_SHR A, MAX_VER B</when>
+			<otherwise>DFSL.TB_V4_INTG_TGRM_SHR A, MAX_VER B</otherwise>
+		</choose>
+		WHERE A.tgrm_ver_no = B.MAX_VER
+		  AND A.REPR_TGRM_ID = #{messageRes}
+		<if test="trxDtime != null and trxDtime != ''">AND A.CHG_DTM &lt;= #{trxDtime}::timestamp</if>
+		<if test='reqResType.equals("1")'>AND A.IO_DIS_CD = '100'</if>
+		<if test='reqResType.equals("4")'>AND A.IO_DIS_CD = '400'</if>
+		GROUP BY A.TGRM_SNO, A.REPR_TGRM_ID, A.TGRM_NM_KOR, A.TGRM_NM_ENG, A.ETC_FRWD_YN1, A.MSK_PTTRN
+	</select>
+	
+	<sql id="serviceReportWhere">
+		<if test="trYmdStart != null and trYmdStart != ''">
+			AND A.CREADTED_TIME &gt;= CAST(#{trYmdStart} || ' 00:00:00.000' AS TIMESTAMP)
+		</if>
+		<if test="trYmdEnd != null and trYmdEnd != ''">
+			AND A.CREADTED_TIME &lt;= CAST(#{trYmdEnd} || ' 23:59:59.999' AS TIMESTAMP)
+		</if>
+		<if test="mediaCategoryCd != null and mediaCategoryCd != ''">
+			AND A.APPLICATION_GROUP_ID = #{mediaCategoryCd}
+		</if>
+		<if test="selGubun != null and selGubun != ''">
+			AND B.SEL_GUBUN = #{selGubun}
+		</if>
+		<if test="delYn != null and delYn != ''">
+			AND B.DEL_YN = #{delYn}
+		</if>
+	</sql>
+
+	<!-- /* 서비스 통계 조회(채널/기간/거래구분/집계포함여부) */ -->
+	<select id="selectServiceReport" resultType="java.util.LinkedHashMap">
+		SELECT APPLICATION_GROUP_ID, SEL_GUBUN, DEL_YN,
+		       SUM(SUCCESS_COUNT) AS TOTAL_SUCCESS_COUNT,
+		       SUM(FAIL_COUNT) AS TOTAL_FAIL_COUNT
+		FROM (
+			<choose>
+				<when test='serverValue.equals("bl")'>
+					SELECT A.APPLICATION_GROUP_ID, A.SERVICE_ID, B.SEL_GUBUN, B.DEL_YN,
+					       A.SUCCESS_COUNT, A.FAIL_COUNT
+					FROM EFBL.TB_EF_BL_SVC A, EFBL.TB_SVC_INFO B
+					WHERE A.SERVICE_ID = B.SERVICE_ID
+					<include refid="serviceReportWhere"/>
+				</when>
+				<otherwise>
+					SELECT A.APPLICATION_GROUP_ID, A.SERVICE_ID, B.SEL_GUBUN, B.DEL_YN,
+					       A.SUCCESS_COUNT, A.FAIL_COUNT
+					FROM DFSL.TB_DF_SL_SVC A, DFSL.TB_SVC_INFO B
+					WHERE A.SERVICE_ID = B.SERVICE_ID
+					<include refid="serviceReportWhere"/>
+				</otherwise>
+			</choose>
+		) SVC
+		GROUP BY APPLICATION_GROUP_ID, SEL_GUBUN, DEL_YN
+	</select>
+
+</mapper>

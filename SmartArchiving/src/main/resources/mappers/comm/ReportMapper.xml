@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.comm.dao.mapper.ReportMapper">
+
+	<!-- /* 리포트 정보 목록 조회(서버/사용여부/리포트ID/리포트명 조건) */ -->
+	<select id="selectReportInfoList" resultType="com.archiving.comm.dto.ReportInfoDto">
+		SELECT
+			T.REPORT_ID   AS reportId,
+			T.REPORT_CD   AS reportCd,
+			T.REPORT_NM   AS reportNm,
+			T.DESCRIPTION AS description,
+			T.REPORT_TYPE AS reportType,
+			T.DETAIL_PAGE AS detailPage
+		FROM mhdb.TB_REPORT_INFO T
+		WHERE 1=1
+		  AND T.SERVER_ID = #{serverId}::integer
+		<if test='useYn != null and useYn != "" and useYn != "A"'>
+			AND T.USE_YN like concat('%', #{useYn}, '%')
+		</if>
+		<if test='reportId != null and reportId != "" and reportId != "*"'>
+			AND T.REPORT_ID = #{reportId}
+		</if>
+		<if test='reportNm != null and reportNm != "" and reportNm != "*"'>
+			AND T.REPORT_NM LIKE concat('%', #{reportNm}, '%')
+		</if>
+		ORDER BY T.REPORT_NM
+	</select>
+
+	<!-- /* 리포트 테이블 컬럼(속성) 목록 조회 */ -->
+	<select id="selectReportTableAttrs" resultType="com.archiving.comm.dto.ReportAttrRowDto">
+		SELECT
+			C.ATTR_ID      AS attrId,
+			C.REPORT_ID    AS reportId,
+			C.TABLE_ID     AS tableId,
+			C.ATTR_ORDER   AS attrOrder,
+			C.ATTR_CD      AS attrCd,
+			C.ATTR_NM      AS attrNm,
+			C.ATTR_TYPE_CD AS attrTypeCd,
+			C.ATTR_SIZE    AS attrSize,
+			C.DECIMAL_SIZE AS decimalSize,
+			C.MDFY_INDEX   AS mdfyIndex,
+			C.ATTR_NULL_YN AS attrNullYn,
+			C.USE_YN       AS useYn,
+			C.WHERE_YN     AS whereYn,
+			C.OUTPUT_PATH  AS outputPath,
+			C.DATE_TYPE_YN AS dateTypeYn,
+			C.TIME_TYPE_YN AS timeTypeYn,
+			C.DATETIME_YN  AS datetimeYn,
+			C.JOIN_YN      AS joinYn,
+			C.JOIN_ALIASS  AS joinAliass,
+			C.GROUP_BY_YN  AS groupByYn,
+			C.ORDER_BY_YN  AS orderByYn,
+			C.PREFIX       AS prefix,
+			C.SORT_INDEX   AS sortIndex,
+			C.WHERE_INDEX  AS whereIndex,
+			C.OUTPUT_INDEX AS outputIndex
+		FROM mhdb.TB_REPORT_INFO I
+		LEFT OUTER JOIN mhdb.TB_REPORT_TABLE_ATTR C
+			ON I.REPORT_ID = C.REPORT_ID
+		WHERE 1=1
+		  AND I.USE_YN = 'Y'
+		  AND I.REPORT_ID = #{reportId}
+		  AND I.SERVER_ID = #{serverId}::integer
+		ORDER BY C.SORT_INDEX
+	</select>
+
+	<!-- /* 리포트 정보 신규 등록 */ -->
+	<insert id="insertReportInfo" parameterType="com.archiving.comm.dto.ReportSaveParamDto">
+		INSERT INTO mhdb.TB_REPORT_INFO (REPORT_CD, REPORT_NM, SERVER_ID, DESCRIPTION, REPORT_TYPE, DETAIL_PAGE, USE_YN)
+		VALUES (#{report_cd}, #{report_nm}, #{serverId}, #{description}, #{report_type}, #{detail_page}, 'Y')
+	</insert>
+
+	<!-- /* 리포트 정보 수정 */ -->
+	<update id="updateReportInfo" parameterType="com.archiving.comm.dto.ReportSaveParamDto">
+		UPDATE mhdb.TB_REPORT_INFO
+		SET
+			REPORT_CD = #{report_cd},
+			REPORT_NM = #{report_nm},
+			DESCRIPTION = #{description},
+			REPORT_TYPE = #{report_type},
+			DETAIL_PAGE = #{detail_page}
+		WHERE REPORT_ID = #{report_id}
+	</update>
+
+	<!-- /* 리포트 정보 삭제 */ -->
+	<delete id="deleteReportInfo">
+		DELETE FROM mhdb.TB_REPORT_INFO
+		WHERE REPORT_ID = #{reportId}
+	</delete>
+
+	<!-- /* 리포트-테이블 속성 매핑 전체 삭제 */ -->
+	<delete id="deleteReportTableAttrs">
+		DELETE FROM mhdb.TB_REPORT_TABLE_ATTR
+		WHERE REPORT_ID = #{reportId}
+	</delete>
+
+	<!-- /* 리포트 속성 신규 등록 */ -->
+	<insert id="insertReportAttr" parameterType="com.archiving.comm.dto.ReportSaveParamDto">
+		INSERT INTO mhdb.TB_REPORT_ATTR (
+			REPORT_ID, TABLE_ID, ATTR_CD, ATTR_NM, ATTR_TYPE_CD, ATTR_SIZE, DECIMAL_SIZE,
+			ATTR_NULL_YN, USE_YN, SORT_INDEX, WHERE_INDEX, OUTPUT_INDEX, DATE_TYPE_YN, TIME_TYPE_YN
+		)
+		VALUES (
+			#{report_id}, #{table_id}, #{attr_cd}, #{attr_nm}, #{attr_type_cd}, #{attr_size}, #{decimal_size},
+			#{attr_null_yn}, 'Y', #{sort_index}, #{where_index}, #{output_index}, #{date_type_yn}, #{time_type_yn}
+		)
+	</insert>
+
+	<!-- /* 리포트 속성 수정 */ -->
+	<update id="updateReportAttr" parameterType="com.archiving.comm.dto.ReportSaveParamDto">
+		UPDATE mhdb.TB_REPORT_ATTR
+		SET
+			ATTR_NM = #{attr_nm},
+			ATTR_TYPE_CD = #{attr_type_cd},
+			ATTR_SIZE = #{attr_size},
+			DECIMAL_SIZE = #{decimal_size},
+			ATTR_NULL_YN = #{attr_null_yn},
+			DATE_TYPE_YN = #{date_type_yn},
+			TIME_TYPE_YN = #{time_type_yn},
+			SORT_INDEX = #{sort_index},
+			WHERE_INDEX = #{where_index},
+			OUTPUT_INDEX = #{output_index}
+		WHERE REPORT_ID = #{report_id}
+		  AND ATTR_CD = #{attr_cd}
+	</update>
+
+	<!-- /* 리포트 속성 삭제 */ -->
+	<delete id="deleteReportAttr">
+		DELETE FROM mhdb.TB_REPORT_ATTR
+		WHERE REPORT_ID = #{reportId}
+		  AND ATTR_CD = #{attrCd}
+	</delete>
+
+	<!-- /* 리포트 속성 존재 여부 카운트 */ -->
+	<select id="countReportAttr" resultType="int">
+		SELECT COUNT(1)
+		FROM mhdb.TB_REPORT_ATTR
+		WHERE REPORT_ID = #{reportId}
+		  AND ATTR_CD = #{attrCd}
+	</select>
+
+</mapper>
+

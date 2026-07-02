@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.auth.dao.mapper.UserAuthApplyMapper">
+
+	<!-- /* 사용자별 최신 미결재(대기) 결재요청 1건 조회 */ -->
+	<select id="selectLatestPendingReq" resultType="com.archiving.auth.dao.mapper.UserAuthApplyMapper$LatestReqRow">
+		SELECT
+			MAX(a.approval_req_id) AS approvalReqId,
+			a.req_date            AS reqDate,
+			a.ip_address          AS ipAddress,
+			b.ip_address          AS ipAddressUser,
+			a.expire_date         AS expireDate
+		FROM mhdb.TB_APPROVAL_REQ a
+		LEFT OUTER JOIN mhdb.tb_user_info b ON a.user_cd = b.user_cd
+		WHERE a.USER_CD = #{userCd}
+		  AND a.approval_div_cd = '01'
+		  AND a.approval_date IS NULL
+		GROUP BY a.req_date, a.ip_address, a.expire_date, b.ip_address
+		ORDER BY approvalReqId DESC
+		LIMIT 1
+	</select>
+
+	<!-- /* 결재요청 ID 기준 결재여부(승인/반려 등) 조회 */ -->
+	<select id="selectApprovalYnByReq" resultType="string">
+		SELECT APPROVAL_YN
+		FROM mhdb.TB_APPROVAL_LINE
+		WHERE approval_req_id = #{approvalReqId}
+		  AND USER_CD = #{userCd}
+	</select>
+
+	<!-- /* 결재요청/결재라인 상태 조회(레거시 GetUserAuthApply sQuery3 동작) */ -->
+	<select id="selectApprovalLineState" resultType="com.archiving.auth.dao.mapper.UserAuthApplyMapper$ApprovalLineStateRow">
+		SELECT
+			COALESCE(A.APPROVAL_DATE, '')        AS approvalDate,
+			COALESCE(A.APPROVAL_REQ_REASON, '')  AS approvalReqReason,
+			COALESCE(B.APPROVAL_YN, '')          AS approvalYn,
+			COALESCE(B.APPROVAL_DATE, '')        AS lineApprovalDate,
+			COALESCE(B.APPROVAL_LINE_USER_ID, '') AS approvalLineUserId,
+			COALESCE(A.IP_ADDRESS, '')           AS ipAddress,
+			COALESCE(A.AUTH, '')                 AS auth,
+			COALESCE(A.COM_CD, '')               AS comCd
+		FROM mhdb.TB_APPROVAL_REQ A,
+			 mhdb.TB_APPROVAL_LINE B
+		WHERE A.USER_CD = B.USER_CD
+		  AND A.APPROVAL_DIV_CD = B.APPROVAL_DIV_CD
+		  AND A.APPROVAL_REQ_ID = B.APPROVAL_REQ_ID
+		  AND A.USER_CD = #{userCd}
+		  AND A.APPROVAL_REQ_ID = #{approvalReqId}
+		ORDER BY B.APPROVAL_LINE_INDEX
+	</select>
+
+	<!-- /* 요청일자별 결재요청 건수 조회 */ -->
+	<select id="countReqByDate" resultType="int">
+		SELECT COUNT(*) AS cnt
+		FROM mhdb.TB_APPROVAL_REQ
+		WHERE REQ_DATE = #{reqDate}
+	</select>
+
+	<!-- /* 요청일자 기준 다음 시퀀스(3자리) 계산 */ -->
+	<select id="selectNextSeqByDate" resultType="string">
+		SELECT LPAD((COUNT(1)+1)::TEXT,3,'0') AS seq
+		FROM mhdb.TB_APPROVAL_REQ
+		WHERE REQ_DATE = #{reqDate}
+	</select>
+
+	<!-- /* 요청일자 기준 최대 시퀀스 조회 */ -->
+	<select id="selectMaxSeqByDate" resultType="string">
+		SELECT SUBSTRING(MAX(APPROVAL_REQ_ID), 9, 11) AS seq
+		FROM mhdb.TB_APPROVAL_REQ
+		WHERE REQ_DATE = #{reqDate}
+	</select>
+
+	<!-- /* 인사마스터(사번) 기본정보 조회 */ -->
+	<select id="selectInsaByEno" resultType="com.archiving.auth.dao.mapper.UserAuthApplyMapper$InsaRow">
+		SELECT
+			ENO   AS eno,
+			NAME  AS name,
+			BRC   AS brc,
+			BRNM  AS brnm,
+			OFT_C AS oftC,
+			OFT   AS oft
+		FROM mhdb.TB_INSA_MST
+		WHERE ENO = #{eno}
+		LIMIT 1
+	</select>
+
+	<!-- /* 페이지명(URL 일부)로 메뉴명 조회 */ -->
+	<select id="selectMenuNmByPageName" resultType="string">
+		SELECT MENU_NM
+		FROM mhdb.TB_MENU
+		WHERE MENU_URL ILIKE '%' || #{pageName} || '%'
+		LIMIT 1
+	</select>
+
+	<!-- /* 결재요청 ID 최대값 조회 */ -->
+	<select id="selectMaxApprovalReqId" resultType="string">
+		SELECT MAX(approval_req_id) AS approval_req_id
+		FROM mhdb.TB_APPROVAL_REQ
+	</select>
+
+	<!-- /* 결재요청 등록 */ -->
+	<insert id="insertApprovalReq" parameterType="com.archiving.auth.dao.mapper.UserAuthApplyMapper$ApprovalReqInsertRow">
+		INSERT INTO mhdb.TB_APPROVAL_REQ
+			(USER_CD, APPROVAL_DIV_CD, APPROVAL_REQ_ID, NAME, APPROVAL_REQ_REASON, REQ_DATE, EXPIRE_DATE, BRC, BRNM, OFT_C, OFT, AUTH, COM_CD, IP_ADDRESS, PROGRAM_ID, PROGRAM_NM)
+		VALUES
+			(#{userCd}, #{approvalDivCd}, #{approvalReqId}, #{name}, #{approvalReqReason}, #{reqDate}, #{expireDate}, #{brc}, #{brnm}, #{oftC}, #{oft}, #{auth}, #{comCd}, #{ipAddress}, #{programId}, #{programNm})
+	</insert>
+
+	<!-- /* 결재라인 등록 */ -->
+	<insert id="insertApprovalLine" parameterType="com.archiving.auth.dao.mapper.UserAuthApplyMapper$ApprovalLineInsertRow">
+		INSERT INTO mhdb.TB_APPROVAL_LINE
+			(USER_CD, NAME, APPROVAL_DIV_CD, APPROVAL_REQ_ID, APPROVAL_LINE_INDEX, APPROVAL_LINE_USER_ID, APPROVAL_LINE_USER_NM, BEFORE_APPLY_YN)
+		VALUES
+			(#{userCd}, #{name}, #{approvalDivCd}, #{approvalReqId}, #{approvalLineIndex}::integer, #{approvalLineUserId}, #{approvalLineUserNm}, #{beforeApplyYn})
+	</insert>
+	
+	<select id="selectUserList" resultType="com.archiving.user.dto.UserInfoDto">
+		SELECT
+			U.USER_ID AS userId,
+			U.USER_NM AS userNm,
+			U.USER_CD AS userCd,
+			U.PASSWORD AS password,
+			U.PASSWORD AS passwordOrg,
+			U.TELEPHONE AS telephone,
+			U.EMAIL AS email,
+			U.APPROWAITCNT AS approwaitcnt,
+			U.USE_YN AS useYn,
+			U.PICTURE AS picture,
+			U.LOGIN_DATE AS loginDate,
+			U.BRC AS brc,
+			U.BRNM AS brnm,
+			U.IP_ADDRESS AS ipAddress,
+			U.EXPIRE_DATE AS expireDate
+		FROM mhdb.TB_USER_INFO U
+		WHERE 1 = 1
+		  AND U.USE_YN != 'D'
+		  <if test='userCd != null and userCd != ""'>
+			AND U.USER_CD = #{userCd}
+		  </if>
+	</select>
+
+</mapper>
+

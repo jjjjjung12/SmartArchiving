@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.sql.dao.sqream.SqlSqreamMapper">
+	<!-- /* Sqream 연결 확인(Ping) */ -->
+	<select id="selectPing" resultType="int" statementType="STATEMENT">
+		SELECT 1
+	</select>
+
+	<!-- /* 동적 SQL 실행(Sqream, 주의: ${sql} 직접 실행) */ -->
+	<select id="selectDynamicSql" parameterType="map" resultType="map" statementType="STATEMENT">
+		${sql}
+	</select>
+</mapper>
+

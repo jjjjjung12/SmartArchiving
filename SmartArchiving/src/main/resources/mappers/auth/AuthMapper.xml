@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.auth.dao.mapper.AuthMapper">
+
+	<!-- /* 사용 중(Y)인 사용자 그룹 목록 조회 */ -->
+	<select id="selectActiveUserGroups" resultType="com.archiving.auth.dto.UserGroupDto">
+		SELECT DISTINCT
+			USER_GRP_ID AS userGrpId,
+			USER_GRP_NM AS userGrpNm
+		FROM mhdb.TB_USER_GROUP
+		WHERE USE_YN = 'Y'
+		ORDER BY USER_GRP_ID
+	</select>
+
+	<!-- /* 그룹에 미등록된 메뉴 목록 조회 */ -->
+	<select id="selectMenusNotInGroup" resultType="com.archiving.auth.dto.AuthMenuSimpleDto">
+		SELECT
+			MENU_ID    AS menuId,
+			MENU_NM    AS menuNm,
+			MENU_URL   AS menuUrl,
+			MENU_ORDER AS menuOrder
+		FROM mhdb.TB_MENU
+		WHERE MENU_ID NOT IN (
+			SELECT MENU_ID FROM mhdb.TB_USER_AUTH WHERE USER_GB = #{userGb}::integer
+		)
+		ORDER BY MENU_ORDER
+	</select>
+
+	<!-- /* 그룹에 등록된 메뉴 목록 조회 */ -->
+	<select id="selectMenusInGroup" resultType="com.archiving.auth.dto.AuthMenuSimpleDto">
+		SELECT DISTINCT
+			M.MENU_ID                 AS menuId,
+			lpad(M.MENU_CD,5,'0')     AS menuCd,
+			M.MENU_NM                 AS menuNm,
+			M.MENU_URL                AS menuUrl,
+			M.MENU_ORDER              AS menuOrder
+		FROM mhdb.TB_MENU M, mhdb.TB_USER_AUTH A, mhdb.TB_USER_GROUP I
+		WHERE A.MENU_ID = M.MENU_ID
+		  AND A.USER_GB = #{userGb}::integer
+		ORDER BY M.MENU_ORDER
+	</select>
+
+	<!-- /* 그룹 권한(메뉴) 전체 삭제 */ -->
+	<delete id="deleteUserAuthByGroup">
+		DELETE FROM mhdb.TB_USER_AUTH
+		WHERE USER_GB = #{userGb}::integer
+	</delete>
+
+	<!-- /* 그룹 권한(메뉴) 1건 추가 */ -->
+	<insert id="insertUserAuth">
+		INSERT INTO mhdb.TB_USER_AUTH
+		VALUES (#{userGb}::integer, #{menuId}::integer)
+	</insert>
+
+</mapper>
+

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+	<Properties>
+		<Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p [%t] (%F:%L) %x - %m%n</Property>
+		<Property name="LOG_DIR">/nh/pgm/efblap/sol/dbtoe/logs/SmartArchiving</Property>
+	</Properties>
+
+	<Appenders>
+		<Console name="Console" target="SYSTEM_OUT">
+			<PatternLayout pattern="${LOG_PATTERN}"/>
+		</Console>
+
+		<RollingFile name="UserLogFile"
+					 fileName="${LOG_DIR}/userlog.log"
+					 filePattern="${LOG_DIR}/userlog.%d{yyyy-MM-dd}.log"
+					 createDirsOnStartup="true">
+			<PatternLayout pattern="${LOG_PATTERN}"/>
+			<Policies>
+				<TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+			</Policies>
+			<DefaultRolloverStrategy max="30"/>
+		</RollingFile>
+	</Appenders>
+
+	<Loggers>
+		<Logger name="com.archiving" level="info" additivity="false">
+			<AppenderRef ref="Console"/>
+			<AppenderRef ref="UserLogFile"/>
+		</Logger>
+		<Logger name="org.mybatis" level="debug" additivity="false">
+			<AppenderRef ref="Console"/>
+			<AppenderRef ref="UserLogFile"/>
+		</Logger>
+
+		<Root level="info">
+			<AppenderRef ref="Console"/>
+			<AppenderRef ref="UserLogFile"/>
+		</Root>
+	</Loggers>
+</Configuration>

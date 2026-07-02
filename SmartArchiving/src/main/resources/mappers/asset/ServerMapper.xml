@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.asset.dao.mapper.ServerMapper">
+
+	<!-- /* 서버 목록 조회(서버ID/사용여부 조건) */ -->
+	<select id="selectServerList" resultType="com.archiving.asset.dto.ServerDto">
+		SELECT
+			S.SERVER_ID AS serverId,
+			S.SERVER_NM AS serverNm,
+			S.SERVER_CLASS_CD AS serverClassCd,
+			S.SERVER_IP AS serverIp,
+			S.SERVER_DESC AS serverDesc,
+			S.USE_YN AS useYn,
+			C.DETAIL_NM AS serverClassNm
+		FROM mhdb.TB_SERVER S, mhdb.TB_CODE_DETAIL C
+		WHERE S.SERVER_CLASS_CD = C.DETAIL_CD
+		  AND 'SERVER_CLASS_CD' = C.GROUP_CD
+		  <if test='useYn != null and useYn != "" and useYn != "A"'>
+			AND S.USE_YN like '%' || #{useYn} || '%'
+		  </if>
+		  <if test='serverId != null and serverId != "" and serverId != "*"'>
+			AND S.SERVER_ID = (#{serverId})::integer
+		  </if>
+		  <if test='searchVal != null and searchVal != ""'>
+			<choose>
+			  <when test='searchCol == "SERVER_NM"'>
+				AND UPPER(S.SERVER_NM) LIKE '%' || UPPER(#{searchVal}) || '%'
+			  </when>
+			  <when test='searchCol == "SERVER_CLASS_NM"'>
+				AND UPPER(C.DETAIL_NM) LIKE '%' || UPPER(#{searchVal}) || '%'
+			  </when>
+			  <when test='searchCol == "SERVER_IP"'>
+				AND UPPER(S.SERVER_IP) LIKE '%' || UPPER(#{searchVal}) || '%'
+			  </when>
+			  <when test='searchCol == "SERVER_DESC"'>
+				AND UPPER(S.SERVER_DESC) LIKE '%' || UPPER(#{searchVal}) || '%'
+			  </when>
+			  <otherwise>
+				AND (
+					UPPER(S.SERVER_NM) LIKE '%' || UPPER(#{searchVal}) || '%'
+					OR UPPER(C.DETAIL_NM) LIKE '%' || UPPER(#{searchVal}) || '%'
+					OR UPPER(S.SERVER_IP) LIKE '%' || UPPER(#{searchVal}) || '%'
+					OR UPPER(S.SERVER_DESC) LIKE '%' || UPPER(#{searchVal}) || '%'
+				)
+			  </otherwise>
+			</choose>
+		  </if>
+		ORDER BY S.SERVER_NM
+	</select>
+
+	<!-- /* 서버 신규 등록 */ -->
+	<insert id="insertServer">
+		INSERT INTO mhdb.TB_SERVER (SERVER_NM, SERVER_CLASS_CD, SERVER_IP, SERVER_DESC, USE_YN)
+		VALUES (#{serverNm}, #{serverClassCd}, #{serverIp}, #{serverDesc}, 'Y')
+	</insert>
+
+	<!-- /* 서버 사용중지(소프트 삭제) */ -->
+	<update id="softDeleteServer">
+		UPDATE mhdb.TB_SERVER
+		SET USE_YN = 'N'
+		WHERE SERVER_ID = (#{serverId})::integer
+	</update>
+
+	<!-- /* 서버 정보 수정 */ -->
+	<update id="updateServer">
+		UPDATE mhdb.TB_SERVER
+		SET SERVER_NM = #{serverNm},
+			SERVER_CLASS_CD = #{serverClassCd},
+			SERVER_IP = #{serverIp},
+			SERVER_DESC = #{serverDesc},
+			USE_YN = #{useYn}
+		WHERE SERVER_ID = (#{serverId})::integer
+	</update>
+
+</mapper>
+

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.bulkjob.dao.mapper.BulkJobMapper">
+
+	<!-- /* 결재요청 ID 기준 벌크잡 요청 목록 조회 */ -->
+	<select id="selectBulkReqJobs" resultType="com.archiving.bulkjob.dto.BulkReqJobRowDto">
+		SELECT
+			START_DATE AS startDate,
+			END_DATE AS endDate,
+			ACCOUNT_NO AS accountNo,
+			USER_ID AS userId,
+			CUST_REG_NO AS custRegNo,
+			TEL_NO AS telNo,
+			USER_IP AS userIp,
+			ORG_FILE_NM AS orgFileNm,
+			U_FILE_NM AS uFileNm,
+			COALESCE(FILE_URL,'') AS fileUrl,
+			BATCH_YN AS batchYn,
+			APPLY_YN AS applyYn,
+			APPROVAL_REQ_ID AS approvalReqId
+		FROM mhdb.TB_BULK_JOB_REQ
+		WHERE 1=1
+		  AND APPROVAL_REQ_ID = #{approvalReqId}
+		ORDER BY REQ_DATE
+	</select>
+
+	<!-- /* 벌크조회 요청 목록 조회(사용자/요청일/검색구분/영장번호 조건) */ -->
+	<select id="selectBulkInquiryReqList" resultType="com.archiving.bulkjob.dto.BulkDataReqRowDto">
+		SELECT
+			USER_CD AS userCd,
+			USER_NM AS userNm,
+			REQ_DATE AS reqDate,
+			SEARCH_DIV_CD AS searchDivCd,
+			SEARCH_DIV_VAL AS searchDivVal,
+			WARRANT_NUM AS warrantNum,
+			START_DATE AS startDate,
+			FILE_NM AS fileNm,
+			FILE_URL AS fileUrl,
+			END_DATE AS endDate,
+			BATCH_YN AS batchYn,
+			APPLY_YN AS applyYn,
+			APPROVAL_REQ_ID AS approvalReqId
+		FROM mhdb.TB_BULK_DATA_REQ
+		WHERE 1=1
+		<if test='userCd != null and userCd != ""'>
+			AND USER_CD = #{userCd}
+		</if>
+		<if test='reqYmd != null and reqYmd != ""'>
+			AND REQ_DATE &gt;= concat(#{reqYmd}, ' 00:00:00')
+			AND REQ_DATE &lt;= concat(#{reqYmd}, ' 23:59:59')
+		</if>
+		<if test='searchDivCd != null and searchDivCd != ""'>
+			AND SEARCH_DIV_CD = #{searchDivCd}
+		</if>
+		<if test='warrantNum != null and warrantNum != ""'>
+			AND WARRANT_NUM = #{warrantNum}
+		</if>
+		ORDER BY REQ_DATE
+	</select>
+
+</mapper>
+

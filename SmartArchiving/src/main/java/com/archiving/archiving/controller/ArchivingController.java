@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Controller
 public class ArchivingController {
 
-    @GetMapping("/")
+    @GetMapping("/archivingPage")
     public String archivingPage(@RequestParam HashMap<String, Object> requestMap, Model model) {
         return "archiving/archivingPage.tiles";
     }

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.auth.dao.mapper.AuthMenuMapper">
+
+    <!-- /* 메뉴 전체 조회(선택 조건에 따라 사용중 메뉴만) */ -->
+    <select id="selectMenusForAll" resultType="com.archiving.auth.dto.MenuItemDto">
+        SELECT
+            lpad(M.MENU_CD,5,'0') AS menuCd,
+            M.MENU_NM             AS menuNm,
+            M.MENU_URL            AS menuUrl,
+            M.MENU_ORDER          AS menuOrder,
+            M.MENU_ID             AS menuId,
+            M.MENU_DESC           AS menuDesc,
+            M.UP_MENU_ID          AS upMenuId,
+            M.USE_YN              AS useYn,
+            'Y'                   AS menuYn,
+            COALESCE(M.ICON_CLASS_ID, '') AS iconClassId
+        FROM mhdb.TB_MENU M
+        <if test="selCd != null and selCd.equals(&quot;M&quot;)">
+            WHERE M.USE_YN = 'Y'
+        </if>
+        ORDER BY M.MENU_ORDER
+    </select>
+
+    <!-- /* 사용자별 권한 메뉴 조회 */ -->
+    <select id="selectMenusForUser" resultType="com.archiving.auth.dto.MenuItemDto">
+        SELECT
+            lpad(M.MENU_CD,5,'0') AS menuCd,
+            M.MENU_NM             AS menuNm,
+            M.MENU_URL            AS menuUrl,
+            M.MENU_ORDER          AS menuOrder,
+            M.MENU_ID             AS menuId,
+            M.MENU_DESC           AS menuDesc,
+            M.UP_MENU_ID          AS upMenuId,
+            M.USE_YN              AS useYn,
+            'Y'                   AS menuYn,
+            COALESCE(M.ICON_CLASS_ID, '') AS iconClassId
+        FROM mhdb.TB_MENU M
+        WHERE M.USE_YN = 'Y'
+          AND M.MENU_ID IN (
+            SELECT A.MENU_ID
+              FROM mhdb.TB_USER_AUTH A,
+                   mhdb.TB_USER_MEMBER UM
+             WHERE UM.USER_GRP_ID = A.USER_GB
+               AND UM.USER_ID = #{userId}::integer
+          )
+        ORDER BY M.MENU_ORDER
+    </select>
+
+    <!-- /* 관리자 메뉴 검색(메뉴명/URL/사용여부 조건) */ -->
+    <select id="selectMenusForAdminSearch" resultType="com.archiving.auth.dto.MenuItemDto">
+        SELECT
+            lpad(M.MENU_CD,5,'0') AS menuCd,
+            M.MENU_NM             AS menuNm,
+            M.MENU_URL            AS menuUrl,
+            M.MENU_ORDER          AS menuOrder,
+            M.MENU_ID             AS menuId,
+            M.MENU_DESC           AS menuDesc,
+            M.UP_MENU_ID          AS upMenuId,
+            M.USE_YN              AS useYn,
+            'Y'                   AS menuYn,
+            COALESCE(M.ICON_CLASS_ID, '') AS iconClassId
+        FROM mhdb.TB_MENU M
+        WHERE 1=1
+        <if test='menuNm != null and menuNm != ""'>
+            AND M.MENU_NM ILIKE '%' || #{menuNm} || '%'
+        </if>
+        <if test='url != null and url != ""'>
+            AND M.MENU_URL ILIKE '%' || #{url} || '%'
+        </if>
+        <if test='useYn != null and useYn != ""'>
+            AND M.USE_YN = #{useYn}
+        </if>
+        ORDER BY M.MENU_ID, M.MENU_CD
+    </select>
+
+</mapper>

@@ -1,0 +1,54 @@
+@charset "utf-8";
+/*
+
+[ 기준 색상 코드 ]
+주조색(자주-변경X)
+	배경 : #f1426d
+	텍스트 : #dc4f72
+보조색(보라-기본색상)
+	배경 : #484592
+	텍스트 : #4c47c7, light/#efe8f7, deep/#3d3a89
+hover 연한 배경색 : #f6f6fc
+line : #ddd
+
+*/
+
+/* ----- S : layout ----- */
+.popup_wrap { /* display: none; */ position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 80%; min-width: 490px; background: #fff; border-radius: 4px; border: 1px solid #486078; z-index: 9999999; }
+.popup_wrap.big { width: 1170px; }
+.popup_wrap.w465 { width: 465px; }
+.pop_header { position: relative; padding: 16px 20px; }
+.pop_header h2 { padding-right: 40px; color: #333; }
+.pop_header h2 span { font-size: 18px; color: #777; font-weight: 400;}
+.close { position: absolute; top: 41%; right: 20px; transform: translateY(-50%); }
+.close i { font-size: 22px; color: #555; transition: all .3s; }
+.close:hover i { color: #1967b4; }
+
+.pop_body { max-height: calc(calc(var(--vh, 1vh)* 100) - 230px); padding: 0 20px 32px; overflow-y: auto;}
+.pop_cont { max-height: 580px; overflow-y: auto; }
+/* ----- E : layout ----- */
+.pop_nomargin { margin: -30px; }
+.pop_nomargin.mb0 { margin-bottom: 0; }
+
+
+/* title */
+.tit_pop { position: relative; font-size: 22px; padding-bottom: 14px; border-bottom: 1px solid #ecf0f2;}
+
+.popup_bg{background: rgba(0, 0, 0, 0.4);z-index: 9999999;position: fixed;top: 0;left: 0;width: 100%;height: 100%;display: none;}
+
+.popup_wrap .wr_graph {  } 
+.popup_wrap .tbl_box > table[class*="tbl"] { min-width: auto; }
+
+
+	/* Mobile */
+@media screen and (max-width: 480px){
+	
+	.popup_wrap { min-width: 90%; }
+	.pop_body { padding: 14px; }
+	.pop_body .list01 dl { flex-direction: column; }
+	.close { right: 16px; }
+	
+	.pop_header { padding: 16px 14px; }
+	.pop_header h2 { font-size: 18px; }
+	
+}

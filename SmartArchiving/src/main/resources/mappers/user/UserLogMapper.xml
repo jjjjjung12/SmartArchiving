@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+	<!--
+	  화면 기준: webapp/js/user/userLogList.js (LOG_ID, ACTION_TIME, USER_NAME, PROGRAM_NM, ACTION_DATE, …)
+	  테이블: mhdb.TB_USER_LOGS — 일자 검색: ACTION_DATE와 start_dt/end_dt(8자리, userLogList.js F_SP_* 비교) 문자열 대소 비교. ACTION_DATE가 DB date 타입이면 to_date(#{startDt},'YYYYMMDD') 형태로 매퍼를 바꿔야 함
+	  정렬: 일시 컬럼 ACTION_TIME 기준 (레거시 그리드 첫 데이터 컬럼이 ACTION_TIME)
+	-->
+<mapper namespace="com.archiving.user.dao.mapper.UserLogMapper">
+
+	<!-- /* 사용자 로그 조회용 공통 WHERE 절 */ -->
+	<sql id="userLogWhere">
+		WHERE 1 = 1
+		<if test='startDt != null and startDt != ""'>
+			AND L.ACTION_DATE &gt;= to_date(#{startDt}, 'YYYYMMDD')
+		</if>
+		<if test='endDt != null and endDt != ""'>
+			AND L.ACTION_DATE &lt;= to_date(#{endDt}, 'YYYYMMDD')
+		</if>
+		<if test='userCd != null and userCd != ""'>
+			AND L.USER_CD ILIKE '%' || #{userCd} || '%'
+		</if>
+		<if test='userNm != null and userNm != ""'>
+			AND L.USER_NAME ILIKE '%' || #{userNm} || '%'
+		</if>
+		<if test='menuNm != null and menuNm != ""'>
+			AND L.PROGRAM_NM ILIKE '%' || #{menuNm} || '%'
+		</if>
+	</sql>
+
+	<!-- /* 사용자 로그 총 건수 조회(조건 검색) */ -->
+	<select id="countUserLogs" resultType="int">
+		SELECT COUNT(1)
+		FROM mhdb.TB_USER_LOGS L
+		<include refid="userLogWhere"/>
+	</select>
+
+	<!-- /* 사용자 로그 목록 조회(조건 검색/페이징) */ -->
+	<select id="selectUserLogs" resultType="com.archiving.user.dto.UserLogRowDto">
+		SELECT
+			L.LOG_ID AS logId,
+			COALESCE(L.ACTION_TIME::text, '') AS actionTime,
+			L.USER_NAME AS userName,
+			L.PROGRAM_NM AS programNm,
+			COALESCE(L.ACTION_DATE::text, '') AS actionDate,
+			L.GROUP_ID AS groupId,
+			L.USER_ID AS userId,
+			L.USER_CD AS userCd,
+			L.PROGRAM_ID AS programId,
+			L.PROGRAM_WHERE AS programWhere
+		FROM mhdb.TB_USER_LOGS L
+		<include refid="userLogWhere"/>
+		ORDER BY L.ACTION_TIME DESC NULLS LAST, L.LOG_ID DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+</mapper>

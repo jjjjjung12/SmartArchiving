@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.auth.dao.mapper.MenuAdminMapper">
+
+	<!-- /* 메뉴 ID 시퀀스 다음값 조회 */ -->
+	<select id="nextMenuId" resultType="long">
+		SELECT NEXTVAL('MHDB.MENU_MENU_ID_SEQ')
+	</select>
+
+	<!-- /* 메뉴 신규 등록 */ -->
+	<insert id="insertMenu">
+		INSERT INTO mhdb.TB_MENU (MENU_CD, MENU_NM, MENU_URL, MENU_DESC, MENU_ORDER, USE_YN, UP_MENU_ID, ICON_CLASS_ID)
+		VALUES (#{menuCd}, #{menuNm}, #{menuUrl}, #{menuDesc}, #{menuOrder}, #{useYn}, NULL, #{iconClassId})
+	</insert>
+
+	<!-- /* 메뉴 정보 수정 */ -->
+	<update id="updateMenu">
+		UPDATE mhdb.TB_MENU
+		SET MENU_NM = #{menuNm},
+			MENU_CD = #{menuCd},
+			MENU_URL = #{menuUrl},
+			MENU_DESC = #{menuDesc},
+			MENU_ORDER = #{menuOrder},
+			USE_YN = #{useYn},
+			ICON_CLASS_ID = #{iconClassId}
+		WHERE MENU_ID = #{menuId}::integer
+	</update>
+
+	<!-- /* 메뉴 1건 삭제 */ -->
+	<delete id="deleteMenu">
+		DELETE FROM mhdb.TB_MENU
+		WHERE MENU_ID = #{menuId}::integer
+	</delete>
+
+	<!-- /* 메뉴 여러 건 일괄 삭제 */ -->
+	<delete id="deleteMenus">
+		DELETE FROM mhdb.TB_MENU
+		WHERE MENU_ID IN
+		<foreach collection="menuIds" item="id" open="(" close=")" separator=",">
+			#{id}::integer
+		</foreach>
+	</delete>
+
+</mapper>
+

@@ -97,7 +97,7 @@ function fn_close() {
 				alert("통합로그인필요!");
 			}else{
 				while(ticket.indexOf("+") != -1) {
-				ticket= ticket.replace("+", "%2b"); // Ticket 값에서 +를 %2b로 치환
+					ticket= ticket.replace("+", "%2b"); // Ticket 값에서 +를 %2b로 치환
 				}
 					// 아래의 TOA 값으로 개발서버 로그인 후 운영서버를 접근방지 / 운영서버 로그인 후 개발서버 접근을 방지하기 위한 로직.
 					//if( NEXESS_API.GetLoginTOA() == "92" || NEXESS_API.GetLoginTOA() == "93" )  // 통합인증 개발서버 로그인, 92 : 인증서로그인, 93 : ID/PW 로그인

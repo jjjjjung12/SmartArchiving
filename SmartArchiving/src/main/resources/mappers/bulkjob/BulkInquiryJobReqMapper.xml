@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.bulkjob.dao.mapper.BulkInquiryJobReqMapper">
+
+	<!-- /* 요청일자 기준 다음 결재요청 ID 생성 */ -->
+	<select id="selectNextApprovalReqId" resultType="string">
+		SELECT
+			#{reqDate} ||
+			LPAD(
+				(COALESCE(MAX(CAST(SUBSTRING(APPROVAL_REQ_ID, 9, 3) AS INT)), 0) + 1)::TEXT,
+				3,
+				'0'
+			)
+		FROM mhdb.TB_APPROVAL_REQ
+		WHERE REQ_DATE = #{reqDate}
+	</select>
+
+	<!-- /* 벌크잡 요청 등록 */ -->
+	<insert id="insertBulkJobReq" parameterType="com.archiving.bulkjob.dao.mapper.BulkInquiryJobReqMapper$InsertBulkJobReqParam">
+		INSERT INTO mhdb.TB_BULK_JOB_REQ (
+			APPROVAL_REQ_ID, USER_CD, USER_NM,
+			START_DATE, END_DATE, ACCOUNT_NO, USER_ID, CUST_REG_NO, TEL_NO, USER_IP,
+			ORG_FILE_NM, U_FILE_NM, BATCH_YN, APPLY_YN
+		)
+		VALUES (
+			#{approvalReqId}, #{userCd}, #{userNm},
+			#{startDate}, #{endDate}, #{accountNo}, #{userId}, #{custRegNo}, #{telNo}, #{userIp},
+			#{orgFileNm}, #{uFileNm}, 'N', 'N'
+		)
+	</insert>
+
+	<!-- /* 결재요청 등록(벌크요청 연동) */ -->
+	<insert id="insertApprovalReq" parameterType="com.archiving.bulkjob.dao.mapper.BulkInquiryJobReqMapper$InsertApprovalReqParam">
+		INSERT INTO mhdb.TB_APPROVAL_REQ (
+			USER_CD, APPROVAL_DIV_CD, APPROVAL_REQ_ID, NAME, APPROVAL_REQ_REASON, REQ_DATE,
+			AUTH, EXPIRE_DATE, BRC, BRNM, OFT_C, OFT, PROGRAM_ID, PROGRAM_NM
+		)
+		VALUES (
+			#{userCd}, #{approvalDivCd}, #{approvalReqId}, #{name}, #{approvalReqReason}, #{reqDate},
+			'', '', #{brc}, #{brnm}, #{oftC}, #{oft},
+			#{programId},
+			(SELECT MENU_NM FROM mhdb.TB_MENU WHERE MENU_URL ILIKE concat('%', #{programId}, '%') LIMIT 1)
+		)
+	</insert>
+
+	<!-- /* 결재라인 등록(벌크요청 연동) */ -->
+	<insert id="insertApprovalLine" parameterType="com.archiving.bulkjob.dao.mapper.BulkInquiryJobReqMapper$InsertApprovalLineParam">
+		INSERT INTO mhdb.TB_APPROVAL_LINE (
+			USER_CD, NAME, APPROVAL_DIV_CD, APPROVAL_REQ_ID,
+			APPROVAL_LINE_INDEX, APPROVAL_LINE_USER_ID, APPROVAL_LINE_USER_NM, BEFORE_APPLY_YN
+		)
+		VALUES (
+			#{userCd}, #{name}, #{approvalDivCd}, #{approvalReqId},
+			#{approvalLineIndex}, #{approvalLineUserId}, #{approvalLineUserNm}, #{beforeApplyYn}
+		)
+	</insert>
+
+</mapper>
+

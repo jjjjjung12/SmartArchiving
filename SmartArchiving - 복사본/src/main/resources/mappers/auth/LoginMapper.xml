@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.auth.dao.mapper.LoginMapper">
+
+    <select id="selectInsaByEno" resultType="com.archiving.auth.dao.mapper.LoginMapper$InsaLoginRow">
+        SELECT
+            RTR_DT AS rtrDt,
+            BRC    AS brc,
+            NAME   AS name,
+            BRNM   AS brnm
+        FROM mhdb.TB_INSA_MST
+        WHERE ENO = #{eno}
+        LIMIT 1
+    </select>
+
+    <select id="selectUserByUserCd" resultType="com.archiving.auth.dao.mapper.LoginMapper$UserLoginRow">
+        SELECT
+            U.USER_ID        AS userId,
+            U.USER_CD        AS userCd,
+            U.USER_NM        AS userNm,
+            U.PASSWORD       AS password,
+            U.APPROWAITCNT   AS approwaitcnt,
+            U.PICTURE        AS picture,
+            G.USER_GRP_ID    AS userGrpId,
+            U.LOGIN_DATE     AS loginDate,
+            U.BRC            AS brc,
+            U.BRNM           AS brnm,
+            U.USE_YN         AS useYn,
+            U.IP_ADDRESS     AS ipAddress,
+            U.EXPIRE_DATE    AS expireDate
+        FROM mhdb.TB_USER_INFO U,
+             mhdb.TB_USER_MEMBER G
+        WHERE G.USER_ID = U.USER_ID
+          AND U.USER_CD = #{userCd}
+        LIMIT 1
+    </select>
+
+    <select id="selectPendingApprovalLineUserId" resultType="string">
+        SELECT approval_line_user_id
+        FROM mhdb.TB_APPROVAL_LINE
+        WHERE APPROVAL_LINE_USER_ID = #{userCd}
+          AND APPROVAL_YN IS NULL
+          AND BEFORE_APPLY_YN = 'Y'
+        LIMIT 1
+    </select>
+
+    <update id="updateLoginDate">
+        UPDATE mhdb.TB_USER_INFO
+        SET LOGIN_DATE = #{loginDate}
+        WHERE USER_CD = #{userCd}
+    </update>
+
+    <update id="updateBrc">
+        UPDATE mhdb.TB_USER_INFO
+        SET BRC = #{brc},
+            BRNM = #{brnm}
+        WHERE USER_CD = #{userCd}
+    </update>
+
+</mapper>

@@ -6,8 +6,8 @@ document.write("<script type='text/javascript' charset='utf-8' src='/MagicArchiv
 var CONST_LOCAL_DEMON_ADDRESS = "https://127.0.0.1:13015";
 var CONST_TYPE_DEFAULT = "GET";
 var CONST_REQUEST_INSTALL_RETRY_COUNT = 3;
-var CONST_TIMEOUT_TYPE_DEFAULT = 5000;   // 가상머신에서 첫 커넥션 연결 시 설정된 시간만큼 걸림(ms).
-var CONST_TIMEOUT_TYPE_000 = 10000;   // 가상머신에서 첫 커넥션 연결 시 설정된 시간만큼 걸림(ms).
+var CONST_TIMEOUT_TYPE_DEFAULT = 5000;   // 가상머신에서첫커넥션연결 시설정된시간만큼 걸림(ms).
+var CONST_TIMEOUT_TYPE_000 = 10000;   // 가상머신에서첫커넥션연결 시설정된시간만큼 걸림(ms).
 var CONST_ASYNC_DEFAULT = false;
 
 var GLOBAL_PORT_SCAN_RETRY_COUNT = 0;
@@ -106,7 +106,7 @@ function jsonpGet(reqData)
 				if(reqData.callback != null)
 				{
 					var resData = new responseData();
-					// 우리 포맷이 아니다.
+					// 우리 포맷이아니다
 					if(res === undefined)
 					{
 						resData.resultCode = 0;
@@ -133,7 +133,7 @@ function jsonpGet(reqData)
 						var resData = new responseData();
 
 						//설치되어 있지 않는 경우 0
-						//그 이외의 SSL 인증서 에러 및 설치는 되어 있지만 외부 상태로 발생하는 오류는 3 메시지 표시한다.
+						//그이외의SSL 인증서에러 및설치는되어 있지만외부 상태로발생하는 오류는3 메시지 표시한다.
 						if(status == "parsererror")
 						{
 							resData.resultCode = "0";
@@ -207,7 +207,7 @@ function Init_RequestData(requestData)
 
 
 
-// 아래로 NC 제어 함수
+// 아래로NC 제어 함수
 function Nexess_ExtendMethod(callback, name, value)
 {
 	Print_ConsoleLog(">> Nexess_ExtendMethod Func Call");

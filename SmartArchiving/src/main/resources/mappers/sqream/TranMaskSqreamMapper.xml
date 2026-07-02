@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.archiving.asset.dao.sqream.TranMaskSqreamMapper">
+
+	<!-- /* (Sqream) 마스킹 패턴이 설정된 전문 항목 건수 조회 */ -->
+	<select id="countMaskPatternNotNullByTgrmNmEng" resultType="int">
+		SELECT COUNT(1)
+		FROM EFBL.TB_V4_INTG_TGRM_SHR
+		WHERE TGRM_NM_ENG = #{tgrmNmEng}
+		  AND MSK_PTTRN IS NOT NULL
+	</select>
+
+</mapper>
